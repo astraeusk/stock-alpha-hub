@@ -230,7 +230,7 @@ KOREAN_STOCKS_DB = [
     {"ticker": "TSLA", "name": "테슬라 (Tesla)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 210.50}
 ]
 
-KRX_MASTER_PATH = os.path.join(BASE_DIR, 'krx_stocks_master.json')
+KRX_MASTER_PATH = os.path.join(os.path.dirname(__file__), 'krx_stocks_master.json')
 if os.path.exists(KRX_MASTER_PATH):
     try:
         with open(KRX_MASTER_PATH, 'r', encoding='utf-8') as f:
