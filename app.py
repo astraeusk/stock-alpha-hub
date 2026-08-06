@@ -947,11 +947,11 @@ def query_gemini_ai(prompt, system_instruction=""):
     if not api_key:
         return {
             "success": False,
-            "error": "GEMINI_API_KEY가 설정되지 않았습니다. 사이트 상단 [🤖 Gemini AI 키 등록] 버튼을 눌러 발급받은 키를 등록해주세요.",
+            "error": "GEMINI_API_KEY가 설정되지 않았습니다. 사이트 상단 [🔑 Gemini 키] 버튼을 눌러 발급받은 키를 등록해주세요.",
             "content": None
         }
         
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    models = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash-lite-001"]
     full_prompt = f"{system_instruction}\n\n[사용자 요청]\n{prompt}" if system_instruction else prompt
     
     payload = json.dumps({
@@ -964,15 +964,20 @@ def query_gemini_ai(prompt, system_instruction=""):
         }
     }).encode('utf-8')
     
-    req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'})
-    try:
-        res = urllib.request.urlopen(req, timeout=15)
-        res_data = json.loads(res.read())
-        ai_text = res_data['candidates'][0]['content']['parts'][0]['text']
-        return {"success": True, "content": ai_text}
-    except Exception as e:
-        print("Gemini API call failed:", e)
-        return {"success": False, "error": f"Gemini API 호출 중 오류 발생: {str(e)}", "content": None}
+    for model in models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'})
+        try:
+            res = urllib.request.urlopen(req, timeout=12)
+            res_data = json.loads(res.read())
+            ai_text = res_data['candidates'][0]['content']['parts'][0]['text']
+            return {"success": True, "content": ai_text}
+        except Exception as e:
+            if "429" in str(e):
+                time.sleep(1)
+            continue
+            
+    return {"success": False, "error": "Gemini API 호출에 성공했으나 할당량(Rate Limit) 초과 또는 응답 지연 상태입니다. 10초 후 다시 시도해 주세요.", "content": None}
 
 @app.route('/api/settings/gemini-key', methods=['GET', 'POST'])
 def handle_gemini_key():

@@ -3,3 +3,5 @@ __pycache__/
 venv/
 .env
 *.log
+data_store.json
+stock_alpha.db
