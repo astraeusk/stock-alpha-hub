@@ -206,55 +206,55 @@ KAKAOTALK_MESSAGES = []
 
 STOCK_DECODER_DATA = {
     "NVDA": {
-        "name": "NVIDIA Corporation",
+        "name": "엔비디아 (NVIDIA Corporation)",
         "ticker": "NVDA",
         "market": "international",
         "price": 128.50,
         "currency": "USD",
         "segment_revenue": [
-            {"segment": "Compute & Networking (Data Center)", "share": 87, "amount": 26200},
-            {"segment": "Graphics (Gaming & ProViz)", "share": 10, "amount": 3000},
-            {"segment": "Automotive & Robotics", "share": 3, "amount": 900}
+            {"segment": "AI 데이터센터 서버 칩셋 (컴퓨팅&네트워킹)", "share": 87, "amount": 26200},
+            {"segment": "게이밍 GPU 및 일반 그래픽스", "share": 10, "amount": 3000},
+            {"segment": "자율주행 전장 & 로보틱스", "share": 3, "amount": 900}
         ],
         "geo_revenue": [
-            {"region": "United States", "share": 44},
-            {"region": "Taiwan", "share": 22},
-            {"region": "China (incl. HK)", "share": 14},
-            {"region": "Other International", "share": 20}
+            {"region": "미국 본토 시장", "share": 44},
+            {"region": "대만 (TSMC 파운드리 밸류체인)", "share": 22},
+            {"region": "중화권 (중국 및 홍콩)", "share": 14},
+            {"region": "기타 글로벌 국가", "share": 20}
         ],
         "business_model": "가속 연산(GPU) 및 CUDA 소프트웨어 생태계를 기반으로 AI 데이터센터 서버용 칩셋 공급. 매출의 87%가 AI 컴퓨팅에서 발생.",
         "kpis": [
             {"name": "데이터센터 매출 성장률 (YoY)", "value": "+427%", "status": "최상"},
             {"name": "매출총이익률 (Gross Margin)", "value": "78.4%", "status": "최상"},
-            {"name": "블랙웰(Blackwell) 램프업 속도", "value": "4분기 양산", "status": "양호"}
+            {"name": "블랙웰(Blackwell) 양산 속도", "value": "4분기 출하", "status": "양호"}
         ],
-        "source_doc": "NVIDIA FY2025 Q1 10-Q (p.18-24)"
+        "source_doc": "NVIDIA FY2025 Q1 10-Q (분기보고서 p.18-24)"
     },
     "AAPL": {
-        "name": "Apple Inc.",
+        "name": "애플 (Apple Inc.)",
         "ticker": "AAPL",
         "market": "international",
         "price": 218.20,
         "currency": "USD",
         "segment_revenue": [
-            {"segment": "iPhone", "share": 52, "amount": 45963},
-            {"segment": "Services (AppStore, iCloud, Pay)", "share": 28, "amount": 23867},
-            {"segment": "Wearables, Home & Accessories", "share": 8, "amount": 7913},
-            {"segment": "Mac & iPad", "share": 12, "amount": 10842}
+            {"segment": "아이폰 (iPhone 주력 기기)", "share": 52, "amount": 45963},
+            {"segment": "고수익 서비스 (앱스토어, iCloud, 애플페이)", "share": 28, "amount": 23867},
+            {"segment": "웨어러블/가전 (애플워치, 에어팟 등)", "share": 8, "amount": 7913},
+            {"segment": "맥 컴퓨터 & 아이패드", "share": 12, "amount": 10842}
         ],
         "geo_revenue": [
-            {"region": "Americas", "share": 42},
-            {"region": "Europe", "share": 25},
-            {"region": "Greater China", "share": 17},
-            {"region": "Japan & Rest of Asia", "share": 16}
+            {"region": "미국 및 아메리카 대륙", "share": 42},
+            {"region": "유럽 및 중동 지역", "share": 25},
+            {"region": "중화권 (중국/대만/홍콩)", "share": 17},
+            {"region": "일본 및 기타 아시아 국가", "share": 16}
         ],
         "business_model": "하드웨어(iPhone/Mac) 디바이스 하이엔드 잠금 효과(Lock-in)를 바탕으로 마진율 74%의 고수익 서비스 부문 가입자 확대.",
         "kpis": [
-            {"name": "Services ARR 성장률", "value": "+14.2%", "status": "양호"},
-            {"name": "활성 디바이스 (Active Installed Base)", "value": "22억 대", "status": "최상"},
-            {"name": "중국 시장 iPhone 매출 (YoY)", "value": "-8.1%", "status": "주의"}
+            {"name": "서비스 부문 연간 매출 성장률", "value": "+14.2%", "status": "양호"},
+            {"name": "전 세계 활성 기기 수 (Installed Base)", "value": "22억 대", "status": "최상"},
+            {"name": "중국 시장 아이폰 매출 (YoY)", "value": "-8.1%", "status": "주의"}
         ],
-        "source_doc": "Apple Inc. Q3 FY24 Form 10-Q (Item 2, p.29)"
+        "source_doc": "Apple Inc. Q3 FY24 Form 10-Q (공시 보고서 p.29)"
     },
     "000660": {
         "name": "SK하이닉스",
@@ -313,24 +313,24 @@ STORY_READER_DATA = {
         "period": "2022 ~ 2025 (3개년 공시 및 어닝콜)",
         "tone_changes": [
             {
-                "topic": "중국 시장 가이던스 표현",
-                "old_text": "2023 10-K: '중국 시장의 강력한 프리미엄 수요 지속 확신(robust premium demand)'",
-                "new_text": "2024 10-K: '중국 거시경제적 환경의 불확실성이 매출에 영향을 줄 수 있음(may impact revenue)'",
-                "shift": "Tone-Down (확신 → 불확실성 언급)",
+                "topic": "중국 시장 매출 실적 표현 변화",
+                "old_text": "2023년 사업보고서: '중국 시장의 강력한 프리미엄 아이폰 수요가 지속될 것'",
+                "new_text": "2024년 사업보고서: '중국 거시경제 불확실성이 아이폰 매출에 영향을 줄 수도 있음'",
+                "shift": "톤다운 (Tone-Down: 강한 확신 ➔ 불확실성 경고)",
                 "significance": "중요"
             },
             {
-                "topic": "Apple Intelligence (AI 기능)",
-                "old_text": "2022 콘퍼런스콜: '머신러닝 기술을 기능 고도화에 지속 적용하고 있습니다'",
-                "new_text": "2024 어닝콜: '애플 인텔리전스는 기기 교체 주기(Supercycle)를 유도할 핵심 동력'",
-                "shift": "New-Focus (생성형 AI 전면 내세움)",
+                "topic": "애플 인텔리전스 (Apple Intelligence AI)",
+                "old_text": "2022년 실적발표: '머신러닝 기술을 기기 내부 기능 고도화에 지속 적용중'",
+                "new_text": "2024년 실적발표: '애플 인텔리전스는 새로운 기기 교체 슈퍼사이클을 유도할 핵심'",
+                "shift": "신사업 강조 (New-Focus: 생성형 AI 전면에 내세움)",
                 "significance": "핵심"
             }
         ],
         "guidance_track_record": [
-            {"quarter": "2023 Q4", "promised": "Services 부문 두 자릿수 성장", "actual": "+16% 달성", "result": "초과 달성"},
-            {"quarter": "2024 Q1", "promised": "iPhone 매출 전년 대비 보합", "actual": "-0.9% 기록", "result": "부합"},
-            {"quarter": "2024 Q2", "promised": "전사 매출 싱글 디짓 성장", "actual": "+4.9% 기록", "result": "부합"}
+            {"quarter": "2023년 4분기", "promised": "서비스 부문 두 자릿수 성장 가이던스", "actual": "+16% 성장 달성", "result": "초과 달성"},
+            {"quarter": "2024년 1분기", "promised": "아이폰 매출 전년 대비 보합 유지", "actual": "-0.9% 기록", "result": "부합"},
+            {"quarter": "2024년 2분기", "promised": "전사 매출 한 자릿수 미만 성장", "actual": "+4.9% 기록", "result": "부합"}
         ]
     },
     "NVDA": {
@@ -339,15 +339,15 @@ STORY_READER_DATA = {
         "period": "2023 ~ 2025 (3개년 공시 및 어닝콜)",
         "tone_changes": [
             {
-                "topic": "대중국 수출 규제 비중",
-                "old_text": "2023 10-K: '중국 시장 매출 비중 20~25% 수준 유지 예상'",
-                "new_text": "2024 10-K: '미정부 수출 통제 강화로 중국 특화 칩셋 매출 지속 제한'",
-                "shift": "Risk Escalation (수출 통제 리스크 상시화)",
+                "topic": "대중국 규제 관련 매출 비중",
+                "old_text": "2023년 사업보고서: '중국 시장 매출 비중 20~25% 수준 안정적 유지'",
+                "new_text": "2024년 사업보고서: '미국 정부의 대중국 수출 통제 강화로 특화 칩셋 매출 제한'",
+                "shift": "리스크 상시화 (Risk Escalation: 수출 규제 장기화)",
                 "significance": "중요"
             }
         ],
         "guidance_track_record": [
-            {"quarter": "2024 Q1", "promised": "매출 $240억 ± 2%", "actual": "$260억 기록", "result": "8% 초과"}
+            {"quarter": "2024년 1분기", "promised": "분기 매출 $240억 달성 예상", "actual": "$260억 기록", "result": "8% 초과 달성"}
         ]
     },
     "000660": {
@@ -356,15 +356,15 @@ STORY_READER_DATA = {
         "period": "2022 ~ 2025 (국내 분기보고서 및 IR)",
         "tone_changes": [
             {
-                "topic": "HBM 수율 및 공급 언급",
-                "old_text": "2023 Q2 IR: 'HBM3 기술적 검증 완료 및 샘플 공급 중'",
-                "new_text": "2024 Q2 IR: 'HBM3e 8단 독점 공급 확고 및 12단 내년 상반기 공급 가시화'",
-                "shift": "Monopoly Confirmed (시장 지배력 공고화)",
+                "topic": "HBM 수율 및 독점 공급 언급",
+                "old_text": "2023년 2분기 IR: 'HBM3 차세대 메모리 기술 검증 완료 및 샘플 공급 중'",
+                "new_text": "2024년 2분기 IR: 'HBM3e 8단 독점 공급 확고 및 12단 내년 상반기 공급 가시화'",
+                "shift": "지배력 공고화 (Monopoly Confirmed: 시장 독점 확정)",
                 "significance": "핵심"
             }
         ],
         "guidance_track_record": [
-            {"quarter": "2024 Q2", "promised": "HBM 매출 전분기 대비 80% 이상 증가", "actual": "+89% 증가", "result": "초과 달성"}
+            {"quarter": "2024년 2분기", "promised": "HBM 매출 전분기 대비 80% 이상 증가", "actual": "+89% 증가", "result": "초과 달성"}
         ]
     }
 }
