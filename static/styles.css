@@ -890,6 +890,161 @@ body.dark-theme {
     font-size: 0.75rem;
 }
 
+/* ==========================================================================
+   Mobile Responsive Optimization (iOS & Android Smartphones / Tablets)
+   ========================================================================== */
+
+.mobile-menu-btn {
+    display: none;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--color-text);
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: all 0.2s ease;
+}
+
+.mobile-menu-btn:hover {
+    background: rgba(203, 166, 247, 0.2);
+    border-color: var(--color-mauve);
+    color: var(--color-mauve);
+}
+
+@media (max-width: 992px) {
+    body.dark-theme {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+    }
+
+    .app-container {
+        flex-direction: column;
+        overflow-y: visible;
+    }
+
+    .mobile-menu-btn {
+        display: inline-flex;
+    }
+
+    .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: var(--border-glass);
+        padding: 0.8rem 1rem;
+        max-height: 70px;
+        overflow: hidden;
+        transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+
+    .sidebar.active-mobile {
+        max-height: 800px;
+        padding: 1rem;
+    }
+
+    .main-content {
+        padding: 1rem;
+        overflow-y: visible;
+    }
+
+    .top-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+    }
+
+    .header-right {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .card-grid.col-3,
+    .card-grid.col-2,
+    .dcf-form-grid,
+    .decoder-grid,
+    .stat-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        font-size: 0.9rem;
+    }
+
+    .top-ticker-bar {
+        font-size: 0.75rem;
+        height: 32px;
+    }
+
+    #pageTitle {
+        font-size: 1.15rem !important;
+    }
+
+    #pageSubtext {
+        font-size: 0.8rem !important;
+    }
+
+    .content-card {
+        padding: 1rem;
+    }
+
+    .trigger-card {
+        padding: 0.9rem;
+    }
+
+    .btn-primary, .btn-secondary, .btn-outline {
+        padding: 10px 14px;
+        font-size: 0.88rem;
+    }
+
+    .modal-card {
+        width: 95%;
+        padding: 1.2rem;
+        max-height: 88vh;
+        overflow-y: auto;
+    }
+
+    .data-table th, .data-table td {
+        padding: 8px 10px;
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+
+    .watchlist-card {
+        padding: 1rem;
+    }
+
+    .wl-actions {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .wl-actions button {
+        flex: 1 1 calc(50% - 6px);
+    }
+}
+
+@media (max-width: 480px) {
+    .brand-text h1 {
+        font-size: 1.1rem;
+    }
+
+    .market-btn-group {
+        flex-direction: column;
+    }
+
+    .btn-m-filter {
+        text-align: center;
+    }
+}
+
 /* Utility Colors */
 .text-mauve { color: var(--color-mauve) !important; }
 .text-teal { color: var(--color-teal) !important; }

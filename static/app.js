@@ -901,6 +901,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Mobile Hamburger Menu Toggle
+    const btnMobileMenu = document.getElementById('btnMobileMenu');
+    const sidebar = document.querySelector('.sidebar');
+    if (btnMobileMenu && sidebar) {
+        btnMobileMenu.addEventListener('click', () => {
+            sidebar.classList.toggle('active-mobile');
+        });
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                sidebar.classList.remove('active-mobile');
+            });
+        });
+    }
+
     // Initialize App
     updateUserUI();
     loadDailyBriefing();
