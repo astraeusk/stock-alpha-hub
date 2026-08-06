@@ -433,8 +433,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td><span class="badge ${a.market === 'domestic' ? 'up' : 'normal'}">${a.market === 'domestic' ? '🇰🇷 국내' : '🇺🇸 해외'}</span></td>
                         <td><span class="info-tag">${a.asset_type}</span></td>
                         <td>${a.quantity.toLocaleString()}주</td>
-                        <td>${a.currency === 'USD' ? '$' : ''}${a.buy_price.toLocaleString()}</td>
-                        <td>${a.currency === 'USD' ? '$' : ''}${a.current_price.toLocaleString()}</td>
+                        <td>${a.buy_currency === 'USD' ? '$' : ''}${a.buy_price.toLocaleString()}${a.buy_currency === 'KRW' ? ' 원' : ''}</td>
+                        <td>${a.currency === 'USD' ? '$' : ''}${a.current_price.toLocaleString()}${a.currency === 'KRW' ? ' 원' : ''}</td>
                         <td><strong>${a.eval_krw.toLocaleString()} 원</strong></td>
                         <td><span class="${a.pnl_pct >= 0 ? 'text-green' : 'text-red'}" style="font-weight:700;">${a.pnl_pct >= 0 ? '+' : ''}${a.pnl_pct.toFixed(2)}%</span></td>
                         <td>
@@ -456,6 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('assetType').value = item.asset_type;
                     document.getElementById('assetQuantity').value = item.quantity;
                     document.getElementById('assetBuyPrice').value = item.buy_price;
+                    document.getElementById('assetBuyCurrency').value = item.buy_currency || (item.market === 'domestic' ? 'KRW' : 'USD');
                     document.getElementById('assetCurrentPrice').value = item.current_price;
                     document.getElementById('assetModalTitle').innerText = '보유 자산 수정';
                     document.getElementById('assetModal').classList.add('active');
@@ -857,6 +858,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('assetName').value = '';
         document.getElementById('assetQuantity').value = '';
         document.getElementById('assetBuyPrice').value = '';
+        document.getElementById('assetBuyCurrency').value = 'KRW';
         document.getElementById('assetCurrentPrice').value = '';
         document.getElementById('assetModalTitle').innerText = '보유 자산 등록';
         assetModal.classList.add('active');
@@ -872,6 +874,7 @@ document.addEventListener('DOMContentLoaded', () => {
             asset_type: document.getElementById('assetType').value,
             quantity: document.getElementById('assetQuantity').value,
             buy_price: document.getElementById('assetBuyPrice').value,
+            buy_currency: document.getElementById('assetBuyCurrency').value,
             current_price: document.getElementById('assetCurrentPrice').value
         };
 

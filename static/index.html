@@ -565,9 +565,18 @@
                     <label>보유 수량 (주)</label>
                     <input type="number" id="assetQuantity" placeholder="예: 50" step="0.01">
                 </div>
-                <div class="form-group mb-3">
-                    <label>매수 평단가 (달러/원화)</label>
-                    <input type="number" id="assetBuyPrice" placeholder="예: 71000 (원) 또는 110.0 ($)" step="0.1">
+                <div class="card-grid col-2 mb-3">
+                    <div class="form-group">
+                        <label>매수 통화 단위 (Default: 원화)</label>
+                        <select id="assetBuyCurrency" class="form-select">
+                            <option value="KRW" selected>🇰🇷 원화 (KRW)</option>
+                            <option value="USD">🇺🇸 달러 (USD)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>매수 평단가</label>
+                        <input type="number" id="assetBuyPrice" placeholder="예: 71000 또는 110.0" step="0.1">
+                    </div>
                 </div>
                 <div class="form-group mb-3">
                     <label>현재가 (자동 라이브 파싱 / 선택 입력)</label>

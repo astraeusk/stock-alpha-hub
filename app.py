@@ -475,6 +475,7 @@ def add_portfolio_asset():
     quantity = float(req.get('quantity', 1))
     buy_price = float(req.get('buy_price', 100))
     current_price = float(req.get('current_price', buy_price))
+    buy_currency = req.get('buy_currency', 'KRW')
     currency = "KRW" if market == "domestic" else "USD"
     
     if not ticker or not name:
@@ -489,7 +490,8 @@ def add_portfolio_asset():
         "quantity": quantity,
         "buy_price": buy_price,
         "current_price": current_price,
-        "currency": currency
+        "currency": currency,
+        "buy_currency": buy_currency
     }
     
     portfolio.append(new_asset)
@@ -512,6 +514,7 @@ def update_portfolio_asset(asset_id):
             item['quantity'] = float(req.get('quantity', item['quantity']))
             item['buy_price'] = float(req.get('buy_price', item['buy_price']))
             item['current_price'] = float(req.get('current_price', item['current_price']))
+            item['buy_currency'] = req.get('buy_currency', item.get('buy_currency', 'KRW'))
             item['currency'] = "KRW" if item['market'] == "domestic" else "USD"
             
             data_store['portfolio'] = portfolio
@@ -548,7 +551,6 @@ def get_portfolio_cockpit():
     
     asset_items = []
     for item in portfolio:
-        # Try fetching real-time price from Yahoo Finance
         live_info = get_live_market_symbol(item['ticker'])
         if live_info and live_info.get('price', 0) > 0:
             price = live_info['price']
@@ -558,11 +560,14 @@ def get_portfolio_cockpit():
 
         buy = item.get('buy_price', 100.0)
         qty = item.get('quantity', 1.0)
-        curr = item.get('currency', 'USD')
-        rate = usd_krw if curr == 'USD' else 1.0
+        curr = item.get('currency', 'KRW' if item['market'] == 'domestic' else 'USD')
+        buy_curr = item.get('buy_currency', 'KRW')
         
-        eval_krw = qty * price * rate
-        invest_krw = qty * buy * rate
+        eval_rate = usd_krw if curr == 'USD' else 1.0
+        buy_rate = usd_krw if buy_curr == 'USD' else 1.0
+        
+        eval_krw = qty * price * eval_rate
+        invest_krw = qty * buy * buy_rate
         pnl_krw = eval_krw - invest_krw
         pnl_pct = ((eval_krw - invest_krw) / invest_krw * 100.0) if invest_krw > 0 else 0.0
         
@@ -584,6 +589,7 @@ def get_portfolio_cockpit():
             "buy_price": buy,
             "current_price": price,
             "currency": curr,
+            "buy_currency": buy_curr,
             "eval_krw": eval_krw,
             "invest_krw": invest_krw,
             "pnl_krw": pnl_krw,
