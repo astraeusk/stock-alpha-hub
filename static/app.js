@@ -413,6 +413,30 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('hhiEvalText').innerText = data.hhi.evaluation;
             document.getElementById('hhiDescText').innerText = data.hhi.desc;
 
+            // Self-Healing Local Storage Backup & Auto-Restore
+            if (data.assets_detail && data.assets_detail.length > 0) {
+                localStorage.setItem('alpha_portfolio_backup', JSON.stringify(data.assets_detail));
+            } else {
+                const localBackup = localStorage.getItem('alpha_portfolio_backup');
+                if (localBackup) {
+                    try {
+                        const parsedBackup = JSON.parse(localBackup);
+                        if (Array.isArray(parsedBackup) && parsedBackup.length > 0) {
+                            console.log('★ Restoring portfolio assets from browser local backup...');
+                            fetch('/api/portfolio/assets/restore_batch', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ assets: parsedBackup })
+                            }).then(res => res.json()).then(resData => {
+                                if (resData.success && resData.portfolio.length > 0) {
+                                    loadPortfolioCockpit();
+                                }
+                            });
+                        }
+                    } catch(e) {}
+                }
+            }
+
             // Render Holdings Table
             const tbody = document.getElementById('portfolioHoldingsTbody');
             if (!data.assets_detail || data.assets_detail.length === 0) {
@@ -467,7 +491,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.addEventListener('click', async () => {
                     const id = btn.getAttribute('data-id');
                     if (confirm('선택한 자산을 포트폴리오에서 삭제하시겠습니까?')) {
-                        await fetch(`/api/portfolio/assets/${id}`, { method: 'DELETE' });
+                        const res = await fetch(`/api/portfolio/assets/${id}`, { method: 'DELETE' });
+                        const resData = await res.json();
+                        if (resData.portfolio) {
+                            localStorage.setItem('alpha_portfolio_backup', JSON.stringify(resData.portfolio));
+                        }
                         loadPortfolioCockpit();
                         loadDailyBriefing();
                     }

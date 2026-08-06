@@ -603,6 +603,66 @@ def get_portfolio_assets():
         portfolio = [p for p in portfolio if p['market'] == market_filter]
     return jsonify(portfolio)
 
+@app.route('/api/portfolio/assets/restore_batch', methods=['POST'])
+def restore_portfolio_assets_batch():
+    data_store = load_data_store()
+    current_portfolio = data_store.get('portfolio', [])
+    req = request.json or {}
+    backup_assets = req.get('assets', [])
+    
+    if not isinstance(backup_assets, list):
+        return jsonify({"success": False, "message": "잘못된 데이터 형식입니다."}), 400
+
+    existing_ids = {p['id'] for p in current_portfolio if 'id' in p}
+    restored_count = 0
+    for item in backup_assets:
+        item_id = item.get('id') or f"p_{int(time.time()*1000)}"
+        if item_id not in existing_ids:
+            item['id'] = item_id
+            current_portfolio.append(item)
+            existing_ids.add(item_id)
+            restored_count += 1
+
+    if restored_count > 0:
+        data_store['portfolio'] = current_portfolio
+        save_data_store(data_store)
+        print(f"★ Auto-restored {restored_count} assets from client local backup!")
+
+    return jsonify({
+        "success": True,
+        "message": f"{restored_count}개의 자산이 자동 복원되었습니다.",
+        "portfolio": current_portfolio
+    })
+
+@app.route('/api/watchlist/restore_batch', methods=['POST'])
+def restore_watchlist_batch():
+    data_store = load_data_store()
+    current_wl = data_store.get('watchlist', [])
+    req = request.json or {}
+    backup_wl = req.get('watchlist', [])
+    
+    if not isinstance(backup_wl, list):
+        return jsonify({"success": False, "message": "잘못된 데이터 형식입니다."}), 400
+
+    existing_tickers = {p['ticker'].upper() for p in current_wl if 'ticker' in p}
+    restored_count = 0
+    for item in backup_wl:
+        t = item.get('ticker', '').upper()
+        if t and t not in existing_tickers:
+            current_wl.append(item)
+            existing_tickers.add(t)
+            restored_count += 1
+
+    if restored_count > 0:
+        data_store['watchlist'] = current_wl
+        save_data_store(data_store)
+
+    return jsonify({
+        "success": True,
+        "message": f"{restored_count}개의 관심종목이 자동 복원되었습니다.",
+        "watchlist": current_wl
+    })
+
 @app.route('/api/portfolio/assets', methods=['POST'])
 def add_portfolio_asset():
     data_store = load_data_store()
