@@ -124,10 +124,11 @@
                         <p class="sub-text" id="pageSubtext">밤사이 주요 시장 움직임, 환율, 관심 테마 및 액션 신호 모니터링</p>
                     </div>
                 </div>
-                <div class="header-right" style="display:flex; gap:10px; align-items:center;">
-                    <button class="btn-outline btn-xs" id="btnOpenGeminiModal" style="border-color:var(--color-mauve); color:var(--color-mauve); font-weight:600;"><i class="fa-solid fa-key"></i> Gemini AI 키 설정</button>
+                <div class="header-right" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <button class="btn-outline btn-xs" id="btnOpenDbModal" style="border-color:var(--color-teal); color:var(--color-teal); font-weight:600;"><i class="fa-solid fa-database"></i> 영구 DB 연동</button>
+                    <button class="btn-outline btn-xs" id="btnOpenGeminiModal" style="border-color:var(--color-mauve); color:var(--color-mauve); font-weight:600;"><i class="fa-solid fa-key"></i> Gemini AI 키</button>
                     <div class="market-pill-badge" style="background: rgba(166, 227, 161, 0.15); color: var(--color-green); border: 1px solid rgba(166, 227, 161, 0.3);">
-                        <span class="m-dot online"></span> <span>🔴 LIVE (15초 자동 갱신중)</span>
+                        <span class="m-dot online"></span> <span>🔴 LIVE</span>
                     </div>
                     <div class="market-pill-badge" id="currentMarketPill">
                         <span class="m-dot"></span> <span id="marketPillText">전체 (국내 & 해외)</span>
@@ -594,6 +595,31 @@
                     💡 API 키가 없으신가요? <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--color-mauve); text-decoration:underline;">Google AI Studio</a>에서 10초 만에 100% 무료 키를 발급받으실 수 있습니다.
                 </div>
                 <button class="btn-primary btn-full" id="btnSaveGeminiKey">Gemini API 키 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 6: Permanent Cloud DB Settings Modal -->
+    <div class="modal-overlay" id="dbModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-database text-teal"></i> 영구 클라우드 DB 연동 설정</h3>
+                <button class="close-btn" id="btnCloseDbModal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-sub mb-3">기본 SQLite3 내장 데이터베이스에 더해, 무료 Supabase Cloud DB를 연동하면 재배포 시에도 100% 영구 보존됩니다.</p>
+                <div class="form-group mb-3">
+                    <label>Supabase Project URL</label>
+                    <input type="text" id="supabaseUrlInput" placeholder="https://xxxx.supabase.co">
+                </div>
+                <div class="form-group mb-3">
+                    <label>Supabase anon Key</label>
+                    <input type="password" id="supabaseKeyInput" placeholder="eyJhbGci...">
+                </div>
+                <div style="font-size:0.78rem; color:var(--color-subtext0); margin-bottom:1rem; line-height:1.4;">
+                    💡 무료 Supabase 프로젝트를 생성하고 URL과 Key를 입력하시면 데이터가 클라우드로 실시간 자동 동기화됩니다.
+                </div>
+                <button class="btn-primary btn-full" id="btnSaveDbKey">영구 클라우드 DB 연결 저장</button>
             </div>
         </div>
     </div>

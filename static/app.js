@@ -938,6 +938,44 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ----------------------------------------------------------------------
+    // Permanent Cloud DB Modal Logic
+    // ----------------------------------------------------------------------
+    const dbModal = document.getElementById('dbModal');
+    const btnOpenDbModal = document.getElementById('btnOpenDbModal');
+    const btnCloseDbModal = document.getElementById('btnCloseDbModal');
+    const btnSaveDbKey = document.getElementById('btnSaveDbKey');
+
+    if (btnOpenDbModal && dbModal) {
+        btnOpenDbModal.addEventListener('click', async () => {
+            try {
+                const res = await fetch('/api/settings/supabase');
+                const data = await res.json();
+                if (data.supabase_url) {
+                    document.getElementById('supabaseUrlInput').value = data.supabase_url;
+                }
+            } catch (e) {}
+            dbModal.classList.add('active');
+        });
+        btnCloseDbModal.addEventListener('click', () => dbModal.classList.remove('active'));
+        btnSaveDbKey.addEventListener('click', async () => {
+            const url = document.getElementById('supabaseUrlInput').value.trim();
+            const key = document.getElementById('supabaseKeyInput').value.trim();
+            try {
+                const res = await fetch('/api/settings/supabase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ supabase_url: url, supabase_key: key })
+                });
+                const data = await res.json();
+                alert(data.message);
+                if (data.success) dbModal.classList.remove('active');
+            } catch (err) {
+                alert('Supabase DB 저장 실패: ' + err.message);
+            }
+        });
+    }
+
     async function runGeminiStockAnalysis(ticker) {
         const outputBox = document.getElementById('geminiReportOutput');
         if (!outputBox) return;

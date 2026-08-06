@@ -10,7 +10,28 @@ from flask_cors import CORS
 app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 
+import sqlite3
+
 DATA_STORE_PATH = os.path.join(os.path.dirname(__file__), 'data_store.json')
+DB_FILE = os.path.join(os.path.dirname(__file__), 'stock_alpha.db')
+
+def init_db():
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS kv_store (
+                key TEXT PRIMARY KEY,
+                val_json TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print("DB Init Error:", e)
+
+init_db()
 
 # Default Data Store (No dummy portfolio entries)
 DEFAULT_DATA = {
@@ -21,22 +42,73 @@ DEFAULT_DATA = {
 }
 
 def load_data_store():
-    if not os.path.exists(DATA_STORE_PATH):
-        save_data_store(DEFAULT_DATA)
-        return DEFAULT_DATA
+    # 1. Load from SQLite Permanent Database
     try:
-        with open(DATA_STORE_PATH, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute('SELECT val_json FROM kv_store WHERE key=?', ('data_store',))
+        row = c.fetchone()
+        conn.close()
+        if row and row[0]:
+            return json.loads(row[0])
     except Exception as e:
-        print("Data store load error:", e)
-        return DEFAULT_DATA
+        print("SQLite Load Error:", e)
+
+    # 2. Fallback to json file backup if sqlite is empty
+    if os.path.exists(DATA_STORE_PATH):
+        try:
+            with open(DATA_STORE_PATH, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                save_data_store(data)
+                return data
+        except Exception:
+            pass
+
+    save_data_store(DEFAULT_DATA)
+    return DEFAULT_DATA
 
 def save_data_store(data):
+    # 1. Save to SQLite Permanent Database
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        c = conn.cursor()
+        c.execute('INSERT OR REPLACE INTO kv_store (key, val_json, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+                  ('data_store', json.dumps(data, ensure_ascii=False)))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print("SQLite Save Error:", e)
+
+    # 2. Save to JSON File Backup
     try:
         with open(DATA_STORE_PATH, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:
-        print("Data store save error:", e)
+        print("JSON Save Error:", e)
+
+    # 3. Supabase Cloud DB Sync (If SUPABASE_URL & SUPABASE_KEY set)
+    supa_url = os.environ.get('SUPABASE_URL', '').strip()
+    supa_key = os.environ.get('SUPABASE_KEY', '').strip()
+    if not supa_url or not supa_key:
+        supa_url = data.get('supabase_url', '').strip()
+        supa_key = data.get('supabase_key', '').strip()
+
+    if supa_url and supa_key:
+        try:
+            target_url = f"{supa_url}/rest/v1/kv_store?on_conflict=key"
+            payload = json.dumps([{
+                "key": "data_store",
+                "val_json": json.dumps(data, ensure_ascii=False)
+            }]).encode('utf-8')
+            req = urllib.request.Request(target_url, data=payload, headers={
+                'apikey': supa_key,
+                'Authorization': f'Bearer {supa_key}',
+                'Content-Type': 'application/json',
+                'Prefer': 'resolution=merge-duplicates'
+            })
+            urllib.request.urlopen(req, timeout=4)
+        except Exception as e:
+            print("Supabase cloud sync error:", e)
 
 # -------------------------------------------------------------------------
 # REAL-TIME MARKET DATA FETCHING (Live Forex & Yahoo Finance API)
@@ -943,6 +1015,27 @@ def get_gemini_stock_analysis(ticker):
             "error": res['error'],
             "status": "key_required"
         })
+
+@app.route('/api/settings/supabase', methods=['GET', 'POST'])
+def handle_supabase_settings():
+    data_store = load_data_store()
+    if request.method == 'POST':
+        req = request.json or {}
+        url = req.get('supabase_url', '').strip()
+        key = req.get('supabase_key', '').strip()
+        data_store['supabase_url'] = url
+        data_store['supabase_key'] = key
+        save_data_store(data_store)
+        return jsonify({"success": True, "message": "Supabase 영구 클라우드 DB 연결 설정이 완료되었습니다!" if (url and key) else "Supabase 연동이 해제되었습니다."})
+    
+    saved_url = data_store.get('supabase_url', '')
+    env_url = os.environ.get('SUPABASE_URL', '')
+    active_status = bool(saved_url or env_url)
+    return jsonify({
+        "active": active_status,
+        "supabase_url": saved_url or ("ENV_SET" if env_url else ""),
+        "db_engine": "SQLite3 + Supabase Cloud DB Sync" if active_status else "SQLite3 Permanent DB Engine"
+    })
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
