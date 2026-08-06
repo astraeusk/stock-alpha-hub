@@ -854,15 +854,58 @@ document.addEventListener('DOMContentLoaded', () => {
     const assetModal = document.getElementById('assetModal');
     document.getElementById('btnOpenAddAssetModal').addEventListener('click', () => {
         document.getElementById('assetEditId').value = '';
+        document.getElementById('assetMarket').value = 'domestic';
         document.getElementById('assetTicker').value = '';
         document.getElementById('assetName').value = '';
+        document.getElementById('assetType').value = '국내 개별주';
         document.getElementById('assetQuantity').value = '';
         document.getElementById('assetBuyPrice').value = '';
         document.getElementById('assetBuyCurrency').value = 'KRW';
         document.getElementById('assetCurrentPrice').value = '';
-        document.getElementById('assetModalTitle').innerText = '보유 자산 등록';
+        document.getElementById('assetModalTitle').innerText = '보유 주식/ETF 등록';
         assetModal.classList.add('active');
     });
+
+    const btnOpenAddCashModal = document.getElementById('btnOpenAddCashModal');
+    if (btnOpenAddCashModal && assetModal) {
+        btnOpenAddCashModal.addEventListener('click', () => {
+            document.getElementById('assetEditId').value = '';
+            document.getElementById('assetMarket').value = 'domestic';
+            document.getElementById('assetTicker').value = 'KRW_CASH';
+            document.getElementById('assetName').value = '보유 현금 (원화)';
+            document.getElementById('assetType').value = '원화 현금 (KRW)';
+            document.getElementById('assetQuantity').value = '1';
+            document.getElementById('assetBuyCurrency').value = 'KRW';
+            document.getElementById('assetBuyPrice').value = '';
+            document.getElementById('assetCurrentPrice').value = '1';
+            document.getElementById('assetModalTitle').innerText = '보유 현금 등록';
+            assetModal.classList.add('active');
+            setTimeout(() => document.getElementById('assetBuyPrice').focus(), 150);
+        });
+    }
+
+    const assetTypeSelect = document.getElementById('assetType');
+    if (assetTypeSelect) {
+        assetTypeSelect.addEventListener('change', () => {
+            const val = assetTypeSelect.value;
+            if (val === '원화 현금 (KRW)') {
+                document.getElementById('assetMarket').value = 'domestic';
+                document.getElementById('assetTicker').value = 'KRW_CASH';
+                document.getElementById('assetName').value = '보유 현금 (원화)';
+                document.getElementById('assetBuyCurrency').value = 'KRW';
+                document.getElementById('assetQuantity').value = '1';
+                document.getElementById('assetCurrentPrice').value = '1';
+            } else if (val === '달러 현금 (USD)') {
+                document.getElementById('assetMarket').value = 'international';
+                document.getElementById('assetTicker').value = 'USD_CASH';
+                document.getElementById('assetName').value = '보유 현금 (달러)';
+                document.getElementById('assetBuyCurrency').value = 'USD';
+                document.getElementById('assetQuantity').value = '1';
+                document.getElementById('assetCurrentPrice').value = '1';
+            }
+        });
+    }
+
     document.getElementById('btnCloseAssetModal').addEventListener('click', () => assetModal.classList.remove('active'));
 
     document.getElementById('btnSubmitAsset').addEventListener('click', async () => {

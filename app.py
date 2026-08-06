@@ -653,25 +653,43 @@ def get_portfolio_cockpit():
     
     asset_items = []
     for item in portfolio:
-        live_info = get_live_market_symbol(item['ticker'])
-        if live_info and live_info.get('price', 0) > 0:
-            price = live_info['price']
-            item['current_price'] = price
+        asset_type = item.get('asset_type', '개별주')
+        ticker = item.get('ticker', '').upper()
+        
+        is_cash = asset_type in ['원화 현금 (KRW)', '달러 현금 (USD)', '원화 현금', '달러 현금', '현금'] or ticker in ['KRW_CASH', 'USD_CASH']
+        
+        if is_cash:
+            price = item.get('current_price', item.get('buy_price', 1.0))
+            if price <= 0: price = 1.0
         else:
-            price = item.get('current_price', 100.0)
+            live_info = get_live_market_symbol(ticker)
+            if live_info and live_info.get('price', 0) > 0:
+                price = live_info['price']
+                item['current_price'] = price
+            else:
+                price = item.get('current_price', 100.0)
 
         buy = item.get('buy_price', 100.0)
         qty = item.get('quantity', 1.0)
         curr = item.get('currency', 'KRW' if item['market'] == 'domestic' else 'USD')
         buy_curr = item.get('buy_currency', 'KRW')
         
-        eval_rate = usd_krw if curr == 'USD' else 1.0
-        buy_rate = usd_krw if buy_curr == 'USD' else 1.0
-        
-        eval_krw = qty * price * eval_rate
-        invest_krw = qty * buy * buy_rate
-        pnl_krw = eval_krw - invest_krw
-        pnl_pct = ((eval_krw - invest_krw) / invest_krw * 100.0) if invest_krw > 0 else 0.0
+        if is_cash:
+            if buy_curr == 'USD' or ticker == 'USD_CASH' or asset_type == '달러 현금 (USD)':
+                eval_krw = buy * qty * usd_krw
+            else:
+                eval_krw = buy * qty
+            invest_krw = eval_krw
+            pnl_krw = 0.0
+            pnl_pct = 0.0
+        else:
+            eval_rate = usd_krw if curr == 'USD' else 1.0
+            buy_rate = usd_krw if buy_curr == 'USD' else 1.0
+            
+            eval_krw = qty * price * eval_rate
+            invest_krw = qty * buy * buy_rate
+            pnl_krw = eval_krw - invest_krw
+            pnl_pct = ((eval_krw - invest_krw) / invest_krw * 100.0) if invest_krw > 0 else 0.0
         
         total_eval_krw += eval_krw
         total_invest_krw += invest_krw
@@ -686,7 +704,7 @@ def get_portfolio_cockpit():
             "ticker": item['ticker'],
             "name": item['name'],
             "market": item['market'],
-            "asset_type": item['asset_type'],
+            "asset_type": asset_type,
             "quantity": qty,
             "buy_price": buy,
             "current_price": price,
