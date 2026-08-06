@@ -221,9 +221,10 @@ def get_live_market_symbol(symbol):
     if cache_key in LIVE_CACHE and (now - LIVE_CACHE[cache_key]['ts'] < 60):
         return LIVE_CACHE[cache_key]['data']
 
-    # For domestic 6-digit tickers, try .KS (코스피) first then .KQ (코스닥)
+    # For domestic 6-digit tickers, try .KQ (코스닥) first then .KS (코스피)
+    # .KQ first because many tickers have a mutual fund doppelganger on .KS
     if symbol.isdigit() and len(symbol) == 6:
-        for suffix in ['.KS', '.KQ']:
+        for suffix in ['.KQ', '.KS']:
             try:
                 yf_symbol = symbol + suffix
                 url = f"https://query1.finance.yahoo.com/v8/finance/chart/{yf_symbol}?interval=1d"
@@ -231,7 +232,9 @@ def get_live_market_symbol(symbol):
                 res = json.loads(urllib.request.urlopen(req, timeout=4).read())
                 meta = res['chart']['result'][0]['meta']
                 price = float(meta.get('regularMarketPrice', 0))
-                if price > 0:
+                inst_type = meta.get('instrumentType', '')
+                # Skip non-EQUITY results (e.g. MUTUALFUND sharing same ticker number)
+                if price > 0 and inst_type == 'EQUITY':
                     prev = float(meta.get('chartPreviousClose', price))
                     chg_pct = ((price - prev) / prev * 100.0) if prev > 0 else 0.0
                     data = {
