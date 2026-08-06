@@ -887,6 +887,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
+            
+            const contentType = res.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                throw new Error('서버가 현재 갱신 준비 중이거나 부팅(Cold Start) 중입니다. 5~10초 후 다시 [저장]을 눌러주세요.');
+            }
             const data = await res.json();
             if (data.success) {
                 alert(data.message);
@@ -929,6 +934,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ gemini_api_key: key })
                 });
+                const contentType = res.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    throw new Error('서버가 현재 부팅 중이거나 배포 갱신 중입니다. 5초 후 다시 시도해 주세요.');
+                }
                 const data = await res.json();
                 alert(data.message);
                 if (data.success) geminiModal.classList.remove('active');
@@ -967,6 +976,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ supabase_url: url, supabase_key: key })
                 });
+                const contentType = res.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    throw new Error('서버가 현재 부팅 중이거나 배포 갱신 중입니다. 5초 후 다시 시도해 주세요.');
+                }
                 const data = await res.json();
                 alert(data.message);
                 if (data.success) dbModal.classList.remove('active');
