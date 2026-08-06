@@ -977,7 +977,7 @@ def query_gemini_ai(prompt, system_instruction=""):
                 time.sleep(1)
             continue
             
-    return {"success": False, "error": "Gemini API 호출에 성공했으나 할당량(Rate Limit) 초과 또는 응답 지연 상태입니다. 10초 후 다시 시도해 주세요.", "content": None}
+    return {"success": False, "error": "Gemini API 연결은 정상 승인되었으나 구글 AI Studio 무료 플랜의 분당 요청 한도(Rate Limit 429)가 찰나에 도달했습니다. 10~15초 후 [AI 실시간 분석 생성]을 다시 눌러주시면 정상 가동됩니다.", "content": None}
 
 @app.route('/api/settings/gemini-key', methods=['GET', 'POST'])
 def handle_gemini_key():
