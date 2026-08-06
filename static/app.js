@@ -1278,6 +1278,114 @@ document.addEventListener('DOMContentLoaded', () => {
                 reader.readAsText(file);
             });
         }
+
+        // Google Drive Backup & Restore Logic
+        const btnGoogleDriveBackup = document.getElementById('btnGoogleDriveBackup');
+        const btnGoogleDriveRestore = document.getElementById('btnGoogleDriveRestore');
+
+        let gdriveTokenClient = null;
+
+        function getGoogleAccessToken(callback) {
+            if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+                alert('구글 서비스를 연동 중입니다. 3초 후 다시 시도해 주세요.');
+                return;
+            }
+            if (!gdriveTokenClient) {
+                gdriveTokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: '921102927236-dummyid.apps.googleusercontent.com',
+                    scope: 'https://www.googleapis.com/auth/drive.file',
+                    callback: (tokenResponse) => {
+                        if (tokenResponse.access_token) {
+                            callback(tokenResponse.access_token);
+                        } else {
+                            alert('구글 계정 권한 승인이 필요합니다.');
+                        }
+                    }
+                });
+            }
+            gdriveTokenClient.callback = (tokenResponse) => {
+                if (tokenResponse.access_token) {
+                    callback(tokenResponse.access_token);
+                } else {
+                    alert('구글 계정 권한 승인이 필요합니다.');
+                }
+            };
+            gdriveTokenClient.requestAccessToken({ prompt: 'consent' });
+        }
+
+        if (btnGoogleDriveBackup) {
+            btnGoogleDriveBackup.addEventListener('click', () => {
+                getGoogleAccessToken(async (accessToken) => {
+                    try {
+                        const exportRes = await fetch('/api/settings/export-backup');
+                        const exportData = await exportRes.json();
+                        if (!exportData.success) throw new Error('백업 데이터 추출 실패');
+
+                        const fileContent = JSON.stringify(exportData.data_store, null, 2);
+                        const fileMetadata = {
+                            name: 'stock_alpha_hub_backup.json',
+                            mimeType: 'application/json'
+                        };
+
+                        const form = new FormData();
+                        form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
+                        form.append('file', new Blob([fileContent], { type: 'application/json' }));
+
+                        const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${accessToken}` },
+                            body: form
+                        });
+                        const uploadData = await uploadRes.json();
+                        if (uploadData.id) {
+                            alert('🎉 내 구글 드라이브에 [stock_alpha_hub_backup.json] 백업 파일이 성공적으로 보존되었습니다!');
+                        } else {
+                            alert('구글 드라이브 업로드 실패: ' + (uploadData.error?.message || '알 수 없는 오류'));
+                        }
+                    } catch (err) {
+                        alert('구글 드라이브 백업 중 오류: ' + err.message);
+                    }
+                });
+            });
+        }
+
+        if (btnGoogleDriveRestore) {
+            btnGoogleDriveRestore.addEventListener('click', () => {
+                getGoogleAccessToken(async (accessToken) => {
+                    try {
+                        const searchRes = await fetch("https://www.googleapis.com/drive/v3/files?q=name='stock_alpha_hub_backup.json' and trashed=false", {
+                            headers: { 'Authorization': `Bearer ${accessToken}` }
+                        });
+                        const searchData = await searchRes.json();
+                        if (!searchData.files || searchData.files.length === 0) {
+                            return alert('내 구글 드라이브에서 [stock_alpha_hub_backup.json] 백업 파일을 찾을 수 없습니다. 먼저 백업을 진행해 주세요.');
+                        }
+
+                        const fileId = searchData.files[0].id;
+                        const contentRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                            headers: { 'Authorization': `Bearer ${accessToken}` }
+                        });
+                        const backupContent = await contentRes.json();
+
+                        const importRes = await fetch('/api/settings/import-backup', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ data_store: backupContent })
+                        });
+                        const importData = await importRes.json();
+                        alert(importData.message);
+                        if (importData.success) {
+                            dbModal.classList.remove('active');
+                            loadPortfolioCockpit();
+                            loadWatchlist();
+                            loadDailyBriefing();
+                        }
+                    } catch (err) {
+                        alert('구글 드라이브 복원 중 오류: ' + err.message);
+                    }
+                });
+            });
+        }
     }
 
     async function runGeminiStockAnalysis(ticker) {
