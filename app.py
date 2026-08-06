@@ -41,6 +41,47 @@ DEFAULT_DATA = {
     "portfolio": []
 }
 
+def sync_remote_db_on_boot():
+    supa_url = os.environ.get('SUPABASE_URL', '').strip()
+    supa_key = os.environ.get('SUPABASE_KEY', '').strip()
+    if not supa_url or not supa_key:
+        try:
+            if os.path.exists(DATA_STORE_PATH):
+                with open(DATA_STORE_PATH, 'r', encoding='utf-8') as f:
+                    ds = json.load(f)
+                    supa_url = ds.get('supabase_url', '').strip()
+                    supa_key = ds.get('supabase_key', '').strip()
+        except Exception:
+            pass
+
+    if supa_url and supa_key:
+        try:
+            url = f"{supa_url}/rest/v1/kv_store?key=eq.data_store&select=val_json"
+            req = urllib.request.Request(url, headers={
+                'apikey': supa_key,
+                'Authorization': f'Bearer {supa_key}'
+            })
+            res = urllib.request.urlopen(req, timeout=5)
+            rows = json.loads(res.read())
+            if rows and len(rows) > 0 and rows[0].get('val_json'):
+                data = json.loads(rows[0]['val_json'])
+                conn = sqlite3.connect(DB_FILE)
+                c = conn.cursor()
+                c.execute('INSERT OR REPLACE INTO kv_store (key, val_json, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+                          ('data_store', json.dumps(data, ensure_ascii=False)))
+                conn.commit()
+                conn.close()
+                with open(DATA_STORE_PATH, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+                print("★ Permanent Cloud DB auto-synced on server startup!")
+                return data
+        except Exception as e:
+            print("Remote DB boot sync error:", e)
+    return None
+
+# Auto sync remote DB on server startup
+sync_remote_db_on_boot()
+
 def load_data_store():
     # 1. Load from SQLite Permanent Database
     try:
@@ -54,7 +95,12 @@ def load_data_store():
     except Exception as e:
         print("SQLite Load Error:", e)
 
-    # 2. Fallback to json file backup if sqlite is empty
+    # 2. Try remote boot sync fallback
+    synced = sync_remote_db_on_boot()
+    if synced:
+        return synced
+
+    # 3. Fallback to json file backup if sqlite is empty
     if os.path.exists(DATA_STORE_PATH):
         try:
             with open(DATA_STORE_PATH, 'r', encoding='utf-8') as f:
