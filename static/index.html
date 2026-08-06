@@ -628,7 +628,7 @@
                 <button class="close-btn" id="btnCloseDbModal"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
-                <p class="text-sub mb-3">기본 SQLite3 내장 데이터베이스에 더해, 무료 Supabase Cloud DB를 연동하면 재배포 시에도 100% 영구 보존됩니다.</p>
+                <p class="text-sub mb-3">무료 Supabase Cloud DB를 연동하거나 PC/모바일 파일로 내보내기/불러오기를 하면 브라우저 초기화 시에도 100% 영구 보존됩니다.</p>
                 <div class="form-group mb-3">
                     <label>Supabase Project URL</label>
                     <input type="text" id="supabaseUrlInput" placeholder="https://xxxx.supabase.co">
@@ -638,9 +638,18 @@
                     <input type="password" id="supabaseKeyInput" placeholder="eyJhbGci...">
                 </div>
                 <div style="font-size:0.78rem; color:var(--color-subtext0); margin-bottom:1rem; line-height:1.4;">
-                    💡 무료 Supabase 프로젝트를 생성하고 URL과 Key를 입력하시면 데이터가 클라우드로 실시간 자동 동기화됩니다.
+                    💡 무료 Supabase URL과 Key를 등록하시면 서버 재배포 및 브라우저 초기화와 상관없이 클라우드에 100% 영구 보존됩니다.
                 </div>
-                <button class="btn-primary btn-full" id="btnSaveDbKey">영구 클라우드 DB 연결 저장</button>
+                <button class="btn-primary btn-full mb-3" id="btnSaveDbKey">영구 클라우드 DB 연결 저장</button>
+
+                <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:1rem; margin-top:1rem;">
+                    <h4 style="font-size:0.88rem; color:var(--color-mauve); margin-bottom:8px;"><i class="fa-solid fa-file-export"></i> 오프라인 JSON 파일 백업 및 복원</h4>
+                    <div style="display:flex; gap:8px; margin-bottom:8px;">
+                        <button class="btn-secondary btn-sm" id="btnExportBackupJson" style="flex:1;"><i class="fa-solid fa-download"></i> 백업 파일 다운로드 (.json)</button>
+                        <button class="btn-outline btn-sm" id="btnTriggerImportJson" style="flex:1;"><i class="fa-solid fa-upload"></i> 백업 파일 복원 불러오기</button>
+                        <input type="file" id="backupFileInput" accept=".json" style="display:none;">
+                    </div>
+                </div>
             </div>
         </div>
     </div>

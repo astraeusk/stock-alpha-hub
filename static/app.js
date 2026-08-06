@@ -1224,6 +1224,60 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Supabase DB 저장 실패: ' + err.message);
             }
         });
+
+        const btnExportBackupJson = document.getElementById('btnExportBackupJson');
+        const btnTriggerImportJson = document.getElementById('btnTriggerImportJson');
+        const backupFileInput = document.getElementById('backupFileInput');
+
+        if (btnExportBackupJson) {
+            btnExportBackupJson.addEventListener('click', async () => {
+                try {
+                    const res = await fetch('/api/settings/export-backup');
+                    const data = await res.json();
+                    if (data.success) {
+                        const blob = new Blob([JSON.stringify(data.data_store, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `stock_alpha_backup_${new Date().toISOString().slice(0,10)}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    }
+                } catch (err) {
+                    alert('백업 다운로드 실패: ' + err.message);
+                }
+            });
+        }
+
+        if (btnTriggerImportJson && backupFileInput) {
+            btnTriggerImportJson.addEventListener('click', () => backupFileInput.click());
+            backupFileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (evt) => {
+                    try {
+                        const jsonContent = JSON.parse(evt.target.result);
+                        const res = await fetch('/api/settings/import-backup', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ data_store: jsonContent })
+                        });
+                        const data = await res.json();
+                        alert(data.message);
+                        if (data.success) {
+                            dbModal.classList.remove('active');
+                            loadPortfolioCockpit();
+                            loadWatchlist();
+                            loadDailyBriefing();
+                        }
+                    } catch (err) {
+                        alert('백업 복원 실패: ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
     }
 
     async function runGeminiStockAnalysis(ticker) {

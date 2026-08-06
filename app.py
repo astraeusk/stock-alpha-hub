@@ -1289,6 +1289,36 @@ def get_gemini_stock_analysis(ticker):
             "status": "key_required"
         })
 
+@app.route('/api/settings/export-backup', methods=['GET'])
+def export_backup_json():
+    data_store = load_data_store()
+    return jsonify({
+        "success": True,
+        "exported_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "data_store": data_store
+    })
+
+@app.route('/api/settings/import-backup', methods=['POST'])
+def import_backup_json():
+    req = request.json or {}
+    imported_data = req.get('data_store') or req.get('data') or req
+    
+    if not isinstance(imported_data, dict):
+        return jsonify({"success": False, "message": "유효하지 않은 백업 데이터입니다."}), 400
+
+    current = load_data_store()
+    if 'portfolio' in imported_data and isinstance(imported_data['portfolio'], list):
+        current['portfolio'] = imported_data['portfolio']
+    if 'watchlist' in imported_data and isinstance(imported_data['watchlist'], list):
+        current['watchlist'] = imported_data['watchlist']
+    if 'kakaotalk_messages' in imported_data and isinstance(imported_data['kakaotalk_messages'], list):
+        current['kakaotalk_messages'] = imported_data['kakaotalk_messages']
+    if 'whitelist_users' in imported_data and isinstance(imported_data['whitelist_users'], dict):
+        current['whitelist_users'].update(imported_data['whitelist_users'])
+
+    save_data_store(current)
+    return jsonify({"success": True, "message": "백업 데이터 파일이 성공적으로 복원 복구되었습니다!"})
+
 @app.route('/api/settings/supabase', methods=['GET', 'POST'])
 def handle_supabase_settings():
     data_store = load_data_store()
