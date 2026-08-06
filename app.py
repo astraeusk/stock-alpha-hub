@@ -513,7 +513,8 @@ def get_whitelisted_users():
         res.append({
             "email": email,
             "name": info['name'],
-            "role": info['role']
+            "role": info['role'],
+            "password": info.get('pass', 'alpha123')
         })
     return jsonify(res)
 
@@ -539,8 +540,29 @@ def add_whitelisted_user():
     data_store['whitelist_users'] = users
     save_data_store(data_store)
     
-    users_list = [{"email": k, "name": v['name'], "role": v['role']} for k, v in users.items()]
+    users_list = [{"email": k, "name": v['name'], "role": v['role'], "password": v.get('pass', '')} for k, v in users.items()]
     return jsonify({"success": True, "message": f"[{name} ({email})] 허가 계정이 등록되었습니다.", "users": users_list})
+
+@app.route('/api/auth/users/password', methods=['PUT', 'POST'])
+def change_user_password():
+    data_store = load_data_store()
+    users = data_store.get('whitelist_users', {})
+    req = request.json or {}
+    email = req.get('email', '').strip()
+    new_password = req.get('password', '').strip()
+    
+    if not email or not new_password:
+        return jsonify({"success": False, "message": "이메일과 변경할 비밀번호는 필수입니다."}), 400
+        
+    if email not in users:
+        return jsonify({"success": False, "message": "해당 계정을 찾을 수 없습니다."}), 404
+        
+    users[email]['pass'] = new_password
+    data_store['whitelist_users'] = users
+    save_data_store(data_store)
+    
+    users_list = [{"email": k, "name": v['name'], "role": v['role'], "password": v.get('pass', '')} for k, v in users.items()]
+    return jsonify({"success": True, "message": f"[{email}] 계정의 비밀번호가 성공적으로 변경되었습니다.", "users": users_list})
 
 @app.route('/api/auth/users/<path:email>', methods=['DELETE'])
 def delete_whitelisted_user(email):

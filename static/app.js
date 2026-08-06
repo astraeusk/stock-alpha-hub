@@ -817,6 +817,69 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('btnCloseUserMgmtModal').addEventListener('click', () => userMgmtModal.classList.remove('active'));
 
+    async function loadWhitelistedUsers() {
+        const tbody = document.getElementById('userMgmtTbody');
+        if (!tbody) return;
+
+        try {
+            const res = await fetch('/api/auth/users');
+            const users = await res.json();
+
+            tbody.innerHTML = users.map(u => `
+                <tr>
+                    <td><strong>${u.email}</strong></td>
+                    <td>${u.name}</td>
+                    <td><span class="badge ${u.role === 'admin' ? 'up' : 'normal'}">${u.role === 'admin' ? '👑 관리자' : '👤 일반회원'}</span></td>
+                    <td><code style="background:rgba(0,0,0,0.3); padding:3px 8px; border-radius:4px; font-family:monospace; color:var(--color-yellow);">${u.password || '******'}</code></td>
+                    <td style="display:flex; gap:4px;">
+                        <button class="btn-secondary btn-xs btn-change-pass" data-email="${u.email}" data-name="${u.name}"><i class="fa-solid fa-key"></i> 암호 변경</button>
+                        ${u.email !== 'admin@alpha.com' ? `<button class="btn-danger btn-xs btn-del-user" data-email="${u.email}"><i class="fa-solid fa-trash"></i> 삭제</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+
+            document.querySelectorAll('.btn-change-pass').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const email = btn.getAttribute('data-email');
+                    const name = btn.getAttribute('data-name');
+                    const newPass = prompt(`[${name} (${email})] 계정의 새 비밀번호를 입력하세요:`);
+                    if (newPass && newPass.trim()) {
+                        try {
+                            const res = await fetch('/api/auth/users/password', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email, password: newPass.trim() })
+                            });
+                            const data = await res.json();
+                            alert(data.message);
+                            if (data.success) loadWhitelistedUsers();
+                        } catch (e) {
+                            alert('비밀번호 변경 실패: ' + e.message);
+                        }
+                    }
+                });
+            });
+
+            document.querySelectorAll('.btn-del-user').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const email = btn.getAttribute('data-email');
+                    if (confirm(`[${email}] 허가 계정을 삭제하시겠습니까?`)) {
+                        try {
+                            const res = await fetch(`/api/auth/users/${encodeURIComponent(email)}`, { method: 'DELETE' });
+                            const data = await res.json();
+                            alert(data.message);
+                            if (data.success) loadWhitelistedUsers();
+                        } catch (e) {
+                            alert('계정 삭제 실패: ' + e.message);
+                        }
+                    }
+                });
+            });
+        } catch (err) {
+            console.error('Error loading users:', err);
+        }
+    }
+
     document.getElementById('btnSubmitAddUser').addEventListener('click', async () => {
         const payload = {
             email: document.getElementById('newUserEmail').value.trim(),
