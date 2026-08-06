@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaHub | AI 주식 분석 & 개인 투자 리서치 콕핏</title>
+    <meta name="description" content="Claude Code 방법론 기반 2층 구조 국내/해외 개인 투자 리서치 및 포트폴리오 분석 시스템">
+    
+    <!-- Google Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+    <!-- Top Live Ticker Marquee -->
+    <div class="top-ticker-bar">
+        <div class="ticker-track" id="tickerTrack">
+            <span class="t-item"><i class="fa-solid fa-flag-usa"></i> S&P 500: <strong>5,420.10</strong> <span class="up">+0.45%</span></span>
+            <span class="t-item"><i class="fa-solid fa-flag-usa"></i> NASDAQ: <strong>17,150.80</strong> <span class="up">+0.82%</span></span>
+            <span class="t-item"><i class="fa-solid fa-money-bill-transfer"></i> 환율(USD/KRW): <strong>1,384.50</strong> <span class="up">+4.20 (+0.30%)</span></span>
+            <span class="t-item"><i class="fa-solid fa-won-sign"></i> KOSPI: <strong>2,680.40</strong> <span class="down">-0.15%</span></span>
+            <span class="t-item"><i class="fa-solid fa-won-sign"></i> KOSDAQ: <strong>855.20</strong> <span class="up">+0.32%</span></span>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo-icon"><i class="fa-solid fa-cube"></i></div>
+                <div class="brand-text">
+                    <h1>AlphaHub</h1>
+                    <span class="version-badge">v2.5 Dual Market</span>
+                </div>
+            </div>
+
+            <!-- Whitelist Security Status -->
+            <div class="user-status-card">
+                <div class="status-header">
+                    <span class="status-dot online"></span>
+                    <span class="status-title">10인 전용 보안 세션</span>
+                </div>
+                <div class="user-info-box">
+                    <p class="u-name" id="userNameDisplay">우성교 (Master)</p>
+                    <p class="u-access"><i class="fa-solid fa-user-shield"></i> 화이트리스트 계정 세션</p>
+                </div>
+                <button class="btn-logout" id="btnLoginModal"><i class="fa-solid fa-key"></i> 계정 변경/로그인</button>
+            </div>
+
+            <!-- Global Market Filter Toggle -->
+            <div class="market-selector-box">
+                <span class="m-select-label"><i class="fa-solid fa-earth-americas"></i> 시장 선택</span>
+                <div class="market-btn-group">
+                    <button class="btn-m-filter active" data-market="all">전체</button>
+                    <button class="btn-m-filter" data-market="domestic">🇰🇷 국내</button>
+                    <button class="btn-m-filter" data-market="international">🇺🇸 해외</button>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="nav-menu">
+                <div class="menu-label">1층: 매일 (자동/반자동)</div>
+                <a href="#layer1" class="nav-link active" data-tab="tab-layer1">
+                    <i class="fa-solid fa-newspaper"></i> 1층 일일 브리핑 & 카톡
+                </a>
+                
+                <div class="menu-label">1.5층: 포트폴리오 & 관심종목</div>
+                <a href="#watchlist" class="nav-link" data-tab="tab-watchlist">
+                    <i class="fa-solid fa-star text-yellow"></i> 관심 종목 관리 (Watchlist)
+                </a>
+                <a href="#layer15" class="nav-link" data-tab="tab-layer15">
+                    <i class="fa-solid fa-chart-pie"></i> 포트폴리오 콕핏 (HHI)
+                </a>
+
+                <div class="menu-label">2층: 온디맨드 (종목 딥다이브)</div>
+                <a href="#company-decoder" class="nav-link" data-tab="tab-decoder">
+                    <i class="fa-solid fa-file-invoice"></i> ① 기업 해독기 (Decoder)
+                </a>
+                <a href="#story-reader" class="nav-link" data-tab="tab-story">
+                    <i class="fa-solid fa-book-open"></i> ② 스토리 리더 (Story)
+                </a>
+                <a href="#price-decoder" class="nav-link" data-tab="tab-price">
+                    <i class="fa-solid fa-calculator"></i> ③ 가격 판독기 (역DCF)
+                </a>
+
+                <div class="menu-label">데이터 수집</div>
+                <a href="#kakaotalk-ingest" class="nav-link" data-tab="tab-kakao">
+                    <i class="fa-solid fa-comment-dots"></i> 카카오톡 정보 수집기
+                </a>
+            </nav>
+
+            <!-- Constitution Safety Banner -->
+            <div class="constitution-box">
+                <i class="fa-solid fa-shield-halved"></i>
+                <div class="const-text">
+                    <strong>시스템 헌법 원칙</strong>
+                    <p>AI는 리서치·정리·계산만 수행하며, 사라/팔아라 매매 신호는 원천 차단합니다.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Viewport -->
+        <main class="main-content">
+            <!-- Top Header Bar -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h2 id="pageTitle">1층: 일일 브리핑 & 카카오톡 실시간 서머리</h2>
+                    <p class="sub-text" id="pageSubtext">밤사이 주요 시장 움직임, 환율, 관심 테마 및 액션 신호 모니터링</p>
+                </div>
+                <div class="header-right">
+                    <div class="market-pill-badge" id="currentMarketPill">
+                        <span class="m-dot"></span> <span id="marketPillText">전체 (국내 & 해외)</span>
+                    </div>
+                    <button class="btn-primary" id="btnRefreshBriefing">
+                        <i class="fa-solid fa-arrows-rotate"></i> 갱신
+                    </button>
+                    <button class="btn-secondary" id="btnOpenAddWatchlistModal">
+                        <i class="fa-solid fa-plus text-yellow"></i> 관심 종목 추가
+                    </button>
+                </div>
+            </header>
+
+            <!-- TAB 1: 1층 일일 브리핑 -->
+            <section class="tab-pane active" id="tab-layer1">
+                <!-- Macro Metric Grid -->
+                <div class="card-grid col-4 mb-4">
+                    <div class="metric-card">
+                        <span class="m-label"><i class="fa-solid fa-money-bill-transfer"></i> 환율 (USD/KRW)</span>
+                        <div class="m-val-group">
+                            <span class="m-value">1,384.50 원</span>
+                            <span class="badge up">+4.20</span>
+                        </div>
+                        <p class="m-desc">수출주 수혜 / 원자재 수입 부담 구간</p>
+                    </div>
+
+                    <div class="metric-card">
+                        <span class="m-label"><i class="fa-solid fa-flag-usa"></i> 🇺🇸 해외 증시 (S&P/NASDAQ)</span>
+                        <div class="m-val-group">
+                            <span class="m-value">17,150.80</span>
+                            <span class="badge up">+0.82%</span>
+                        </div>
+                        <p class="m-desc">빅테크 AI 주도 상승세 지속</p>
+                    </div>
+
+                    <div class="metric-card">
+                        <span class="m-label"><i class="fa-solid fa-won-sign"></i> 🇰🇷 국내 증시 (KOSPI)</span>
+                        <div class="m-val-group">
+                            <span class="m-value">2,680.40</span>
+                            <span class="badge down">-0.15%</span>
+                        </div>
+                        <p class="m-desc">기관 순매도 / 반도체 개별 장세</p>
+                    </div>
+
+                    <div class="metric-card">
+                        <span class="m-label"><i class="fa-solid fa-wallet"></i> 포트폴리오 자산 구성</span>
+                        <div class="m-val-group">
+                            <span class="m-value" id="briefTotalVal">4.52억 원</span>
+                        </div>
+                        <p class="m-desc">해외: <strong>78%</strong> | 국내: <strong>22%</strong></p>
+                    </div>
+                </div>
+
+                <!-- Action Triggers Section -->
+                <div class="content-card mb-4">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-bolt text-yellow"></i> 오늘의 액션 신호 (Action Triggers)</h3>
+                        <span class="info-tag">1층 브리핑이 추천하는 2층 딥다이브 대상</span>
+                    </div>
+                    <div class="trigger-list" id="triggerList">
+                        <!-- Dynamic Trigger Items -->
+                    </div>
+                </div>
+
+                <!-- KakaoTalk Live Feed & AI Extraction -->
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fa-comment-dots text-yellow fab"></i> 카카오톡 입수 정보 & 종목 파싱 피드</h3>
+                        <button class="btn-sm btn-outline" id="btnOpenKakaoTab">수집기 상세보기</button>
+                    </div>
+                    <div class="kakao-feed-container" id="kakaoFeedContainer">
+                        <!-- Dynamic Kakao Feed Cards -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 1.2: 관심 종목 관리 (Watchlist) -->
+            <section class="tab-pane" id="tab-watchlist">
+                <div class="content-card mb-4">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-star text-yellow"></i> 관심 종목 관리 (Domestic & International Watchlist)</h3>
+                        <button class="btn-primary" id="btnOpenAddWatchlistModal2">
+                            <i class="fa-solid fa-plus"></i> 새 관심 종목 등록
+                        </button>
+                    </div>
+                    <p class="text-sub">국내 및 해외 주식 관심 종목을 등록하고 원클릭으로 2층 딥다이브 스킬(기업 해독기/스토리/역DCF)을 가동합니다.</p>
+                </div>
+
+                <div class="card-grid col-2 mb-4" id="watchlistContainer">
+                    <!-- Dynamic Watchlist Cards -->
+                </div>
+            </section>
+
+            <!-- TAB 1.5: 포트폴리오 콕핏 -->
+            <section class="tab-pane" id="tab-layer15">
+                <div class="card-grid col-2 mb-4">
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-chart-pie text-mauve"></i> 국내/해외 자산 비중 & HHI 집중도 평가</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="assetDoughnutChart"></canvas>
+                        </div>
+                        <div class="hhi-box mt-3">
+                            <div class="hhi-score">HHI 지수: <strong>0.218</strong> (안정적 분산)</div>
+                            <p class="text-sub">해외 주식/지수(78%) 및 국내 주식(22%)이 균형 배분되어 0.25 위험 기준선을 하회함.</p>
+                        </div>
+                    </div>
+
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-layer-group text-teal"></i> ETF 경유 숨은 중복 노출 (Overlap)</h3>
+                        </div>
+                        <div class="overlap-list" id="etfOverlapList">
+                            <div class="overlap-card">
+                                <div class="ov-title"><i class="fa-solid fa-box-archive"></i> QQQ (Invesco QQQ Trust)</div>
+                                <p class="ov-detail">개별주 NVDA(28%) + QQQ 내 NVDA(2.1%) = <strong>실질 노출 30.1%</strong></p>
+                                <p class="ov-detail">개별주 AAPL(18%) + QQQ 내 AAPL(2.2%) = <strong>실질 노출 20.2%</strong></p>
+                                <div class="alert-pill warning"><i class="fa-solid fa-triangle-exclamation"></i> 경고: 해외 실질 기술주 비중이 75%를 초과하여 나스닥 지수 변동성에 민감함.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-globe text-sapphire"></i> 자산 유형별 맞춤 평가 및 환율 민감도</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>구분</th>
+                                    <th>자산 유형</th>
+                                    <th>비중</th>
+                                    <th>평가 잣대 및 접근법</th>
+                                    <th>상태</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge normal">🇺🇸 해외</span></td>
+                                    <td><strong>미국 개별 기술주 (NVDA, AAPL)</strong></td>
+                                    <td>46%</td>
+                                    <td>10-K 사업구조 + 스토리 분석 + 역DCF 안전마진 쿼리</td>
+                                    <td><span class="badge success">정밀 점검중</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge normal">🇺🇸 해외</span></td>
+                                    <td><strong>미국 지수 ETF (QQQ, SPY)</strong></td>
+                                    <td>32%</td>
+                                    <td>지수 총계 밸류에이션 및 상위 종목 중복도 점검</td>
+                                    <td><span class="badge normal">양호</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge up">🇰🇷 국내</span></td>
+                                    <td><strong>국내 반도체 (SK하이닉스, 삼성전자)</strong></td>
+                                    <td>14%</td>
+                                    <td>HBM3e 수율, DRAM 분기 실적 및 환율 수혜 반영</td>
+                                    <td><span class="badge success">모니터링</span></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge normal">🇺🇸 해외</span></td>
+                                    <td><strong>금 ETF (GLD)</strong></td>
+                                    <td>8%</td>
+                                    <td>펀더멘털 없음 (미국 실질금리 & 달러 인덱스 연동)</td>
+                                    <td><span class="badge normal">안전 자산</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2.1: 기업 해독기 (Company Decoder) -->
+            <section class="tab-pane" id="tab-decoder">
+                <div class="content-card mb-4">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-microscope text-mauve"></i> ① 기업 해독기 (Company Decoder)</h3>
+                        <div class="search-box">
+                            <input type="text" id="decoderTickerInput" value="NVDA" placeholder="티커 입력 (예: NVDA, AAPL, 000660, 005930)">
+                            <button class="btn-primary" id="btnRunDecoder"><i class="fa-solid fa-magnifying-glass"></i> 해독 카드 생성</button>
+                        </div>
+                    </div>
+                    <p class="text-sub">"이 회사 뭐 하는 회사야?"를 10분 안에 파악하는 사업 구조 & 매출 쪼개기 한 장 요약 카드</p>
+                </div>
+
+                <div id="decoderResultContainer">
+                    <!-- Dynamic Company Decoder Card -->
+                </div>
+            </section>
+
+            <!-- TAB 2.2: 스토리 리더 (Story Reader) -->
+            <section class="tab-pane" id="tab-story">
+                <div class="content-card mb-4">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-book-open-reader text-flamingo"></i> ② 스토리 리더 (Story Reader)</h3>
+                        <div class="search-box">
+                            <input type="text" id="storyTickerInput" value="AAPL" placeholder="티커 입력 (예: AAPL, NVDA, 000660)">
+                            <button class="btn-primary" id="btnRunStory"><i class="fa-solid fa-timeline"></i> 3개년 변화 비교</button>
+                        </div>
+                    </div>
+                    <p class="text-sub">최근 2~3년 공시(10-K/사업보고서) 및 어닝콜 비교를 통해 사라진 문구, 약해진 표현(Tone Down), 경영진 약속 대조</p>
+                </div>
+
+                <div id="storyResultContainer">
+                    <!-- Dynamic Story Reader Card -->
+                </div>
+            </section>
+
+            <!-- TAB 2.3: 가격 판독기 (Reverse DCF) -->
+            <section class="tab-pane" id="tab-price">
+                <div class="content-card mb-4">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-calculator text-peach"></i> ③ 가격 판독기 (Price Decoder - 역DCF)</h3>
+                    </div>
+                    <p class="text-sub">적정주가를 직접 추정하지 않고, "현재 주가가 성립하려면 앞으로 얼마를 벌어야 하는가?"를 역산하여 요구 성장률 산출</p>
+
+                    <div class="dcf-form-grid">
+                        <div class="form-group">
+                            <label>종목 티커</label>
+                            <input type="text" id="dcfTicker" value="AAPL">
+                        </div>
+                        <div class="form-group">
+                            <label>현재 주가 (USD/KRW)</label>
+                            <input type="number" id="dcfPrice" value="218.20" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label>최근 FCF (십억 달러/원)</label>
+                            <input type="number" id="dcfFcf" value="108.0" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label>발행 주식 수 (십억 주)</label>
+                            <input type="number" id="dcfShares" value="15.3" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label>할인율 (WACC %)</label>
+                            <input type="number" id="dcfWacc" value="9.0" step="0.5">
+                        </div>
+                        <div class="form-group">
+                            <label>영구 성장률 (Terminal g %)</label>
+                            <input type="number" id="dcfTerminalG" value="3.0" step="0.5">
+                        </div>
+                    </div>
+                    <button class="btn-primary mt-3 btn-full" id="btnCalculateReverseDcf">
+                        <i class="fa-solid fa-chart-line"></i> 요구 성장률 역산 및 WACC 민감도 매트릭스 계산
+                    </button>
+                </div>
+
+                <div id="priceDecoderResult">
+                    <!-- Dynamic Reverse DCF Result -->
+                </div>
+            </section>
+
+            <!-- TAB 3: 카카오톡 정보 수집기 -->
+            <section class="tab-pane" id="tab-kakao">
+                <div class="content-card mb-4">
+                    <div class="card-header">
+                        <h3><i class="fa-comment-dots fab text-yellow"></i> 카카오톡 정보 수집기 (KakaoTalk Collector)</h3>
+                    </div>
+                    <p class="text-sub">국내/해외 주식 단톡방에서 받은 리포트, 소식, 찌라시 텍스트를 수동/자동으로 흡수하여 종목 및 감성 파싱</p>
+
+                    <div class="kakao-input-box mt-3">
+                        <label>카카오톡 메시지 텍스트 붙여넣기</label>
+                        <textarea id="kakaoRawInput" rows="4" placeholder="예: [카톡방] 삼성전자(005930) 3분기 HBM 공급 가시화 뉴스 공유됨..."></textarea>
+                        <div class="btn-group mt-2">
+                            <button class="btn-primary" id="btnSubmitKakaoText"><i class="fa-solid fa-paper-plane"></i> 텍스트 분석 및 1층 브리핑에 등록</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-list-check text-mauve"></i> 수집된 카카오톡 메시지 아카이브</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>시간</th>
+                                    <th>출처</th>
+                                    <th>시장 구분</th>
+                                    <th>포착 종목</th>
+                                    <th>감성</th>
+                                    <th>핵심 요약</th>
+                                    <th>추천 액션</th>
+                                </tr>
+                            </thead>
+                            <tbody id="kakaoArchiveTbody">
+                                <!-- Dynamic Kakao Archive Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add Watchlist Modal -->
+    <div class="modal-overlay" id="addWatchlistModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-star text-yellow"></i> 새 관심 종목 추가</h3>
+                <button class="close-btn" id="btnCloseAddWatchlistModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group mb-3">
+                    <label>시장 구분</label>
+                    <select id="addWatchMarket" class="form-select">
+                        <option value="international">🇺🇸 해외 주식 (미국 등)</option>
+                        <option value="domestic">🇰🇷 국내 주식 (코스피/코스닥)</option>
+                    </select>
+                </div>
+                <div class="form-group mb-3">
+                    <label>종목 티커 (Symbol)</label>
+                    <input type="text" id="addWatchTicker" placeholder="예: TSLA, MSFT, 005930">
+                </div>
+                <div class="form-group mb-3">
+                    <label>종목명</label>
+                    <input type="text" id="addWatchName" placeholder="예: 테슬라, 삼성전자">
+                </div>
+                <div class="form-group mb-3">
+                    <label>섹터 / 업종</label>
+                    <input type="text" id="addWatchSector" placeholder="예: 전기차/AI, 반도체">
+                </div>
+                <div class="form-group mb-3">
+                    <label>현재가 (선택)</label>
+                    <input type="number" id="addWatchPrice" placeholder="예: 220.5" step="0.1">
+                </div>
+                <div class="form-group mb-3">
+                    <label>관심 메모 (투자 아이디어)</label>
+                    <input type="text" id="addWatchMemo" placeholder="예: 로보택시 행사 발표 및 FSD v13 승인 추적">
+                </div>
+                <button class="btn-primary btn-full mt-3" id="btnSubmitAddWatchlist">관심 종목 등록</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-lock text-mauve"></i> AlphaHub 10인 화이트리스트 로그인</h3>
+                <button class="close-btn" id="btnCloseLoginModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="text-sub mb-3">본 시스템은 등록된 10명의 개인 투자자 전용으로 제한됩니다.</p>
+                <div class="form-group mb-3">
+                    <label>이메일 계정</label>
+                    <input type="email" id="loginEmail" value="admin@alpha.com">
+                </div>
+                <div class="form-group mb-3">
+                    <label>비밀번호</label>
+                    <input type="password" id="loginPass" value="alpha123">
+                </div>
+                <button class="btn-primary btn-full mt-3" id="btnSubmitLogin">로그인 세션 생성</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript App Execution -->
+    <script src="app.js"></script>
+</body>
+</html>
