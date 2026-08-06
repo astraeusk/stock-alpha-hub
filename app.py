@@ -863,6 +863,87 @@ def get_kakaotalk_messages():
         return jsonify(filtered)
     return jsonify(KAKAOTALK_MESSAGES)
 
+# -------------------------------------------------------------------------
+# GEMINI AI INTEGRATION ENGINE
+# -------------------------------------------------------------------------
+def query_gemini_ai(prompt, system_instruction=""):
+    api_key = os.environ.get('GEMINI_API_KEY', '').strip()
+    if not api_key:
+        data_store = load_data_store()
+        api_key = data_store.get('gemini_api_key', '').strip()
+        
+    if not api_key:
+        return {
+            "success": False,
+            "error": "GEMINI_API_KEY가 설정되지 않았습니다. 사이트 상단 [🤖 Gemini AI 키 등록] 버튼을 눌러 발급받은 키를 등록해주세요.",
+            "content": None
+        }
+        
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    full_prompt = f"{system_instruction}\n\n[사용자 요청]\n{prompt}" if system_instruction else prompt
+    
+    payload = json.dumps({
+        "contents": [{
+            "parts": [{"text": full_prompt}]
+        }],
+        "generationConfig": {
+            "temperature": 0.2,
+            "maxOutputTokens": 1200
+        }
+    }).encode('utf-8')
+    
+    req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'})
+    try:
+        res = urllib.request.urlopen(req, timeout=15)
+        res_data = json.loads(res.read())
+        ai_text = res_data['candidates'][0]['content']['parts'][0]['text']
+        return {"success": True, "content": ai_text}
+    except Exception as e:
+        print("Gemini API call failed:", e)
+        return {"success": False, "error": f"Gemini API 호출 중 오류 발생: {str(e)}", "content": None}
+
+@app.route('/api/settings/gemini-key', methods=['GET', 'POST'])
+def handle_gemini_key():
+    data_store = load_data_store()
+    if request.method == 'POST':
+        req = request.json or {}
+        key = req.get('gemini_api_key', '').strip()
+        data_store['gemini_api_key'] = key
+        save_data_store(data_store)
+        return jsonify({"success": True, "message": "Gemini API 키가 저장되었습니다! AI 실시간 분석이 활성화됩니다." if key else "Gemini API 키가 해제되었습니다."})
+    
+    saved_key = data_store.get('gemini_api_key', '')
+    env_key = os.environ.get('GEMINI_API_KEY', '')
+    active_status = bool(saved_key or env_key)
+    masked_key = (saved_key[:6] + "..." + saved_key[-4:]) if len(saved_key) > 10 else ("ENV_KEY_ACTIVE" if env_key else "")
+    return jsonify({"active": active_status, "masked_key": masked_key})
+
+@app.route('/api/stock/gemini-analysis/<ticker>', methods=['GET'])
+def get_gemini_stock_analysis(ticker):
+    ticker_upper = ticker.upper()
+    live_info = get_live_market_symbol(ticker_upper)
+    price_str = f"{live_info['price']} (전일 대비 {live_info['change_pct']})" if live_info else "최신 시세 파싱 완료"
+    
+    sys_prompt = "당신은 월가 최고의 주식 분석 AI 파트너 'Stock Alpha Hub Gemini AI'입니다. 주어진 주식 종목에 대해 한국어로 명확하고 인사이트 넘치는 주식 분석 리포트를 작성하세요. 가독성을 위해 마크다운 불릿 포인트 및 이모지를 활용하세요."
+    user_prompt = f"종목 티커/이름: {ticker_upper}\n현재가: {price_str}\n\n다음 4개 항목을 명확히 정리해 주세요:\n1. 📌 **핵심 사업 구조 및 경쟁 우위 (Moat)**\n2. 🚀 **최근 주가 상승 촉매 (Catalysts)**\n3. ⚠️ **주의해야 할 핵심 리스크 (Risks)**\n4. 🎯 **AI 종합 투자 가이던스 및 안전마진 판단**"
+    
+    res = query_gemini_ai(user_prompt, sys_prompt)
+    if res['success']:
+        return jsonify({
+            "ticker": ticker_upper,
+            "price_info": price_str,
+            "ai_report": res['content'],
+            "status": "success"
+        })
+    else:
+        return jsonify({
+            "ticker": ticker_upper,
+            "price_info": price_str,
+            "ai_report": None,
+            "error": res['error'],
+            "status": "key_required"
+        })
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"★ Stock Alpha Hub Server running on http://127.0.0.1:{port}")

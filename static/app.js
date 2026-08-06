@@ -901,6 +901,102 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ----------------------------------------------------------------------
+    // Gemini AI Analysis Runner & Key Modal Logic
+    // ----------------------------------------------------------------------
+    const geminiModal = document.getElementById('geminiModal');
+    const btnOpenGeminiModal = document.getElementById('btnOpenGeminiModal');
+    const btnCloseGeminiModal = document.getElementById('btnCloseGeminiModal');
+    const btnSaveGeminiKey = document.getElementById('btnSaveGeminiKey');
+
+    if (btnOpenGeminiModal && geminiModal) {
+        btnOpenGeminiModal.addEventListener('click', async () => {
+            try {
+                const res = await fetch('/api/settings/gemini-key');
+                const data = await res.json();
+                if (data.masked_key) {
+                    document.getElementById('geminiApiKeyInput').placeholder = `저장된 키: ${data.masked_key}`;
+                }
+            } catch (e) {}
+            geminiModal.classList.add('active');
+        });
+        btnCloseGeminiModal.addEventListener('click', () => geminiModal.classList.remove('active'));
+        btnSaveGeminiKey.addEventListener('click', async () => {
+            const key = document.getElementById('geminiApiKeyInput').value.trim();
+            try {
+                const res = await fetch('/api/settings/gemini-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ gemini_api_key: key })
+                });
+                const data = await res.json();
+                alert(data.message);
+                if (data.success) geminiModal.classList.remove('active');
+            } catch (err) {
+                alert('Gemini 키 저장 실패: ' + err.message);
+            }
+        });
+    }
+
+    async function runGeminiStockAnalysis(ticker) {
+        const outputBox = document.getElementById('geminiReportOutput');
+        if (!outputBox) return;
+
+        outputBox.innerHTML = `
+            <div class="text-center" style="padding: 2.5rem;">
+                <i class="fa-solid fa-spinner fa-spin text-mauve" style="font-size: 2.5rem; margin-bottom: 1rem; display:block;"></i>
+                <h4 style="color:var(--color-mauve); margin-bottom:0.5rem;">Google Gemini AI가 [${ticker}] 종목을 심층 분석하고 있습니다...</h4>
+                <p class="text-sub">실시간 장중 시세, 경쟁 우위(Moat), 실적 촉매, 리스크 요인을 종합 판단 중입니다.</p>
+            </div>
+        `;
+
+        try {
+            const res = await fetch(`/api/stock/gemini-analysis/${ticker}`);
+            const data = await res.json();
+
+            if (data.status === 'success') {
+                const formattedReport = data.ai_report
+                    .replace(/\n/g, '<br>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+                outputBox.innerHTML = `
+                    <div class="report-header mb-3" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:0.8rem;">
+                        <div>
+                            <span class="badge up" style="font-size:0.8rem; margin-right:6px;">🤖 Gemini 1.5 Flash</span>
+                            <strong style="font-size:1.2rem; color:var(--color-yellow);">${data.ticker}</strong>
+                            <span class="text-sub" style="margin-left:8px;">시세: ${data.price_info}</span>
+                        </div>
+                        <span class="text-sub" style="font-size:0.75rem;">실시간 AI 인텔리전스 생성</span>
+                    </div>
+                    <div class="ai-report-body" style="line-height:1.7; font-size:0.92rem; color:var(--color-text);">
+                        ${formattedReport}
+                    </div>
+                `;
+            } else {
+                outputBox.innerHTML = `
+                    <div class="text-center" style="padding: 2rem; color:var(--color-peach);">
+                        <i class="fa-solid fa-key" style="font-size: 2.5rem; margin-bottom: 1rem; display:block;"></i>
+                        <h4>Gemini API Key 등록 필요</h4>
+                        <p class="text-sub mb-3">${data.error}</p>
+                        <button class="btn-primary btn-sm" onclick="document.getElementById('geminiModal').classList.add('active')">
+                            <i class="fa-solid fa-key"></i> 지금 무료 Gemini API 키 등록하기
+                        </button>
+                    </div>
+                `;
+            }
+        } catch (err) {
+            outputBox.innerHTML = `<div class="text-center text-red" style="padding: 2rem;">Gemini AI 분석 실패: ${err.message}</div>`;
+        }
+    }
+
+    const btnRunGeminiAI = document.getElementById('btnRunGeminiAI');
+    if (btnRunGeminiAI) {
+        btnRunGeminiAI.addEventListener('click', () => {
+            const ticker = document.getElementById('geminiTickerInput').value.trim() || 'NVDA';
+            runGeminiStockAnalysis(ticker);
+        });
+    }
+
     // Mobile Hamburger Menu Toggle
     const btnMobileMenu = document.getElementById('btnMobileMenu');
     const sidebar = document.querySelector('.sidebar');

@@ -84,6 +84,9 @@
                 </a>
 
                 <div class="menu-label">2층: 온디맨드 (종목 딥다이브)</div>
+                <a href="#gemini-ai" class="nav-link" data-tab="tab-gemini">
+                    <i class="fa-solid fa-brain text-mauve"></i> 🤖 Gemini AI 실시간 분석
+                </a>
                 <a href="#company-decoder" class="nav-link" data-tab="tab-decoder">
                     <i class="fa-solid fa-file-invoice"></i> ① 기업 해독기 (Decoder)
                 </a>
@@ -122,6 +125,7 @@
                     </div>
                 </div>
                 <div class="header-right" style="display:flex; gap:10px; align-items:center;">
+                    <button class="btn-outline btn-xs" id="btnOpenGeminiModal" style="border-color:var(--color-mauve); color:var(--color-mauve); font-weight:600;"><i class="fa-solid fa-key"></i> Gemini AI 키 설정</button>
                     <div class="market-pill-badge" style="background: rgba(166, 227, 161, 0.15); color: var(--color-green); border: 1px solid rgba(166, 227, 161, 0.3);">
                         <span class="m-dot online"></span> <span>🔴 LIVE (15초 자동 갱신중)</span>
                     </div>
@@ -378,6 +382,29 @@
                     </div>
                 </div>
             </section>
+
+            <!-- TAB 5: Gemini AI 실시간 종목 분석 -->
+            <section class="tab-pane" id="tab-gemini">
+                <div class="content-card mb-4">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-brain text-mauve"></i> Gemini AI 실시간 종목 파트너</h3>
+                        <span class="info-pill"><i class="fa-solid fa-robot"></i> Google Gemini 1.5 Flash</span>
+                    </div>
+                    <p class="text-sub mb-3">종목 티커나 종목명(예: NVDA, TSLA, 005930, 덕산하이메탈)을 입력하면 Gemini AI가 사업 구조, 상승 촉매, 핵심 리스크, 투자 가이던스를 실시간 분석합니다.</p>
+                    
+                    <div class="search-box mb-4">
+                        <input type="text" id="geminiTickerInput" placeholder="분석할 종목 입력 (예: NVDA, TSLA, 005930, 삼성전자, 덕산하이메탈)">
+                        <button class="btn-primary" id="btnRunGeminiAI"><i class="fa-solid fa-wand-magic-sparkles"></i> AI 실시간 분석 생성</button>
+                    </div>
+
+                    <div id="geminiReportOutput" class="content-card" style="background: rgba(0,0,0,0.3); border: var(--border-glass); min-height: 200px; padding: 1.5rem;">
+                        <p class="text-sub text-center" style="padding: 2rem;">
+                            <i class="fa-solid fa-brain text-mauve" style="font-size: 2.5rem; margin-bottom: 1rem; display:block;"></i>
+                            종목을 입력하고 <strong>[AI 실시간 분석 생성]</strong> 버튼을 클릭해 보세요.
+                        </p>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -546,6 +573,27 @@
                     <input type="number" id="assetCurrentPrice" placeholder="예: 74500 (비워두면 실시간 라이브 주가 자동 연결)" step="0.1">
                 </div>
                 <button class="btn-primary btn-full mt-3" id="btnSubmitAsset">자산 저장 및 콕핏 갱신</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: Gemini API Key Modal -->
+    <div class="modal-overlay" id="geminiModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-key text-yellow"></i> Google Gemini API 키 설정</h3>
+                <button class="close-btn" id="btnCloseGeminiModal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-sub mb-3">Google AI Studio에서 발급받은 무료 Gemini API Key를 입력하시면 2.5층 Gemini AI 실시간 종목 분석이 즉시 가동됩니다.</p>
+                <div class="form-group mb-3">
+                    <label>Gemini API Key</label>
+                    <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy...">
+                </div>
+                <div style="font-size:0.78rem; color:var(--color-subtext0); margin-bottom:1rem; line-height:1.4;">
+                    💡 API 키가 없으신가요? <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--color-mauve); text-decoration:underline;">Google AI Studio</a>에서 10초 만에 100% 무료 키를 발급받으실 수 있습니다.
+                </div>
+                <button class="btn-primary btn-full" id="btnSaveGeminiKey">Gemini API 키 저장</button>
             </div>
         </div>
     </div>
