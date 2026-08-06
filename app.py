@@ -1085,6 +1085,33 @@ def handle_supabase_settings():
         "db_engine": "SQLite3 + Supabase Cloud DB Sync" if active_status else "SQLite3 Permanent DB Engine"
     })
 
+@app.errorhandler(404)
+def handle_404_error(e):
+    return jsonify({
+        "success": False,
+        "code": "ERR_NOT_FOUND",
+        "message": "요청하신 API 엔드포인트를 찾을 수 없습니다 (HTTP 404).",
+        "detail": str(e)
+    }), 404
+
+@app.errorhandler(500)
+def handle_500_error(e):
+    return jsonify({
+        "success": False,
+        "code": "ERR_INTERNAL_SERVER_ERROR",
+        "message": "서버 내부 처리 중 예외가 발생했습니다 (HTTP 500).",
+        "detail": str(e)
+    }), 500
+
+@app.errorhandler(Exception)
+def handle_general_exception(e):
+    return jsonify({
+        "success": False,
+        "code": "ERR_UNHANDLED_EXCEPTION",
+        "message": f"서버 내부 예외 발생: {str(e)}",
+        "detail": type(e).__name__
+    }), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"★ Stock Alpha Hub Server running on http://127.0.0.1:{port}")
