@@ -35,7 +35,12 @@ init_db()
 # Default Data Store (No dummy portfolio entries)
 DEFAULT_DATA = {
     "whitelist_users": {
-        "admin@alpha.com": {"name": "우성교 (Master)", "role": "admin", "pass": "alpha123"}
+        "admin@alpha.com": {"name": "우성교 (Master)", "role": "admin", "pass": "alpha123"},
+        "soyun@naver.com": {"name": "박소윤", "role": "member", "pass": "801102"},
+        "clsrn541@naver.com": {"name": "김가영", "role": "member", "pass": "801102"},
+        "jpkim4591@naver.com": {"name": "김정필", "role": "member", "pass": "801102"},
+        "eunteak@naver.com": {"name": "이은택", "role": "member", "pass": "801102"},
+        "jammin@naver.com": {"name": "잼민이", "role": "member", "pass": "qwer1234"}
     },
     "portfolio": [],
     "watchlist": [],
@@ -110,11 +115,13 @@ def load_data_store():
     if not data:
         data = DEFAULT_DATA.copy()
 
-    # Account Integrity Guard: Guarantee whitelist_users and master admin account always exist!
+    # Account Integrity Guard: Guarantee whitelist_users and default accounts always exist!
     if 'whitelist_users' not in data or not isinstance(data['whitelist_users'], dict) or not data['whitelist_users']:
         data['whitelist_users'] = DEFAULT_DATA['whitelist_users'].copy()
-    elif 'admin@alpha.com' not in data['whitelist_users']:
-        data['whitelist_users']['admin@alpha.com'] = DEFAULT_DATA['whitelist_users']['admin@alpha.com']
+    else:
+        for email, uinfo in DEFAULT_DATA['whitelist_users'].items():
+            if email not in data['whitelist_users']:
+                data['whitelist_users'][email] = uinfo
 
     return data
 
