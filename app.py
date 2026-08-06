@@ -83,6 +83,7 @@ def sync_remote_db_on_boot():
 sync_remote_db_on_boot()
 
 def load_data_store():
+    data = None
     # 1. Load from SQLite Permanent Database
     try:
         with sqlite3.connect(DB_FILE) as conn:
@@ -90,27 +91,32 @@ def load_data_store():
             c.execute('SELECT val_json FROM kv_store WHERE key=?', ('data_store',))
             row = c.fetchone()
             if row and row[0]:
-                return json.loads(row[0])
+                data = json.loads(row[0])
     except Exception as e:
         print("SQLite Load Error:", e)
 
     # 2. Try remote boot sync fallback
-    synced = sync_remote_db_on_boot()
-    if synced:
-        return synced
+    if not data:
+        data = sync_remote_db_on_boot()
 
     # 3. Fallback to json file backup if sqlite is empty
-    if os.path.exists(DATA_STORE_PATH):
+    if not data and os.path.exists(DATA_STORE_PATH):
         try:
             with open(DATA_STORE_PATH, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                save_data_store(data)
-                return data
         except Exception:
             pass
 
-    save_data_store(DEFAULT_DATA)
-    return DEFAULT_DATA
+    if not data:
+        data = DEFAULT_DATA.copy()
+
+    # Account Integrity Guard: Guarantee whitelist_users and master admin account always exist!
+    if 'whitelist_users' not in data or not isinstance(data['whitelist_users'], dict) or not data['whitelist_users']:
+        data['whitelist_users'] = DEFAULT_DATA['whitelist_users'].copy()
+    elif 'admin@alpha.com' not in data['whitelist_users']:
+        data['whitelist_users']['admin@alpha.com'] = DEFAULT_DATA['whitelist_users']['admin@alpha.com']
+
+    return data
 
 def save_data_store(data):
     # 1. Save to SQLite Permanent Database
