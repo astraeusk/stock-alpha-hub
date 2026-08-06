@@ -167,6 +167,52 @@ def save_data_store(data):
         except Exception as e:
             print("Supabase cloud sync error:", e)
 
+    # 4. Master Google Drive Real-time Auto Backup
+    sync_to_master_gdrive(data)
+
+def sync_to_master_gdrive(data):
+    client_id = os.environ.get('GDRIVE_CLIENT_ID', '').strip() or data.get('gdrive_client_id', '').strip()
+    client_secret = os.environ.get('GDRIVE_CLIENT_SECRET', '').strip() or data.get('gdrive_client_secret', '').strip()
+    refresh_token = os.environ.get('GDRIVE_REFRESH_TOKEN', '').strip() or data.get('gdrive_refresh_token', '').strip()
+    file_id = os.environ.get('GDRIVE_FILE_ID', '').strip() or data.get('gdrive_file_id', '').strip()
+    access_token = data.get('gdrive_master_token', '').strip()
+
+    if not access_token and refresh_token and client_id and client_secret:
+        try:
+            token_url = "https://oauth2.googleapis.com/token"
+            req_data = urllib.parse.urlencode({
+                'client_id': client_id,
+                'client_secret': client_secret,
+                'refresh_token': refresh_token,
+                'grant_type': 'refresh_token'
+            }).encode('utf-8')
+            req = urllib.request.Request(token_url, data=req_data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+            res = json.loads(urllib.request.urlopen(req, timeout=4).read())
+            access_token = res.get('access_token', '')
+        except Exception as e:
+            print("Master GDrive token refresh error:", e)
+
+    if access_token:
+        try:
+            payload = json.dumps(data, ensure_ascii=False).encode('utf-8')
+            if file_id:
+                upload_url = f"https://www.googleapis.com/upload/drive/v3/files/{file_id}?uploadType=media"
+                req_method = 'PATCH'
+            else:
+                upload_url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=media"
+                req_method = 'POST'
+            
+            req = urllib.request.Request(upload_url, data=payload, headers={
+                'Authorization': f'Bearer {access_token}',
+                'Content-Type': 'application/json'
+            }, method=req_method)
+            res = json.loads(urllib.request.urlopen(req, timeout=5).read())
+            if res.get('id') and not file_id:
+                data['gdrive_file_id'] = res['id']
+            print("★ Master Google Drive Auto-Sync Completed!")
+        except Exception as e:
+            print("Master GDrive sync upload error:", e)
+
 # -------------------------------------------------------------------------
 # REAL-TIME MARKET DATA FETCHING (Live Forex & Yahoo Finance API)
 # -------------------------------------------------------------------------
@@ -1318,6 +1364,21 @@ def import_backup_json():
 
     save_data_store(current)
     return jsonify({"success": True, "message": "백업 데이터 파일이 성공적으로 복원 복구되었습니다!"})
+
+@app.route('/api/settings/gdrive-master', methods=['GET', 'POST'])
+def handle_master_gdrive_settings():
+    data_store = load_data_store()
+    if request.method == 'POST':
+        req = request.json or {}
+        access_token = req.get('access_token', '').strip()
+        data_store['gdrive_master_token'] = access_token
+        save_data_store(data_store)
+        return jsonify({"success": True, "message": "마스터 관리자 구글 드라이브 전체 유저 중앙 백업 동기화가 활성화되었습니다!"})
+
+    return jsonify({
+        "has_token": bool(data_store.get('gdrive_master_token')),
+        "file_id": data_store.get('gdrive_file_id', '')
+    })
 
 @app.route('/api/settings/supabase', methods=['GET', 'POST'])
 def handle_supabase_settings():
