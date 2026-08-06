@@ -1,6 +1,6 @@
 /**
- * AlphaHub - Frontend Application Logic v2.5
- * Domestic / International Dual Market Filtering & Custom Watchlist Management
+ * AlphaHub - Frontend Application Logic v3.0
+ * Secure Whitelist Access Control & Real-Time Portfolio Asset Management
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const watchlistContainer = document.getElementById('watchlistContainer');
 
     const btnRefreshBriefing = document.getElementById('btnRefreshBriefing');
+    const btnOpenUserMgmt = document.getElementById('btnOpenUserMgmt');
 
     // ----------------------------------------------------------------------
     // Market Selector Logic (국내 / 해외 / 전체)
@@ -86,8 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 pageSubtext.innerText = '국내/해외 관심 종목 등록 및 원클릭 2층 딥다이브 연동';
                 loadWatchlist();
             } else if (tabId === 'tab-layer15') {
-                pageTitle.innerText = '1.5층: 포트폴리오 콕핏 (Portfolio Cockpit)';
-                pageSubtext.innerText = 'HHI 집중도 지수, ETF 경유 중복 노출 및 환율 감응도 평가';
+                pageTitle.innerText = '1.5층: 실시간 포트폴리오 콕핏 (Portfolio Cockpit)';
+                pageSubtext.innerText = '실제 보유 자산 등록, HHI 집중도 지수 및 손익률 실시간 계산';
                 loadPortfolioCockpit();
             } else if (tabId === 'tab-decoder') {
                 pageTitle.innerText = '2층 딥다이브: ① 기업 해독기 (Company Decoder)';
@@ -106,6 +107,59 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ----------------------------------------------------------------------
+    // User Authentication & Whitelist Management
+    // ----------------------------------------------------------------------
+    function updateUserUI() {
+        document.getElementById('userNameDisplay').innerText = currentUser.name;
+        document.getElementById('userRoleDisplay').innerHTML = currentUser.role === 'admin' 
+            ? `<i class="fa-solid fa-user-shield text-mauve"></i> 관리자 (Master)` 
+            : `<i class="fa-solid fa-user text-teal"></i> 일반 회원 (Member)`;
+        
+        if (currentUser.role === 'admin') {
+            btnOpenUserMgmt.style.display = 'inline-block';
+        } else {
+            btnOpenUserMgmt.style.display = 'none';
+        }
+    }
+
+    async function loadWhitelistedUsers() {
+        try {
+            const res = await fetch('/api/auth/users');
+            const users = await res.json();
+            const tbody = document.getElementById('userMgmtTbody');
+            
+            tbody.innerHTML = users.map(u => `
+                <tr>
+                    <td><strong>${u.email}</strong></td>
+                    <td>${u.name}</td>
+                    <td><span class="badge ${u.role === 'admin' ? 'up' : 'normal'}">${u.role === 'admin' ? '최고 관리자' : '일반 회원'}</span></td>
+                    <td>
+                        ${u.email !== 'admin@alpha.com' ? `
+                            <button class="btn-danger btn-xs btn-del-user" data-email="${u.email}">
+                                <i class="fa-solid fa-trash"></i> 삭제
+                            </button>
+                        ` : '<span class="text-sub">삭제 불가</span>'}
+                    </td>
+                </tr>
+            `).join('');
+
+            document.querySelectorAll('.btn-del-user').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const email = btn.getAttribute('data-email');
+                    if (confirm(`[${email}] 계정을 접근 허가 목록에서 삭제하시겠습니까?`)) {
+                        const delRes = await fetch(`/api/auth/users/${encodeURIComponent(email)}`, { method: 'DELETE' });
+                        const delData = await delRes.json();
+                        alert(delData.message);
+                        loadWhitelistedUsers();
+                    }
+                });
+            });
+        } catch (err) {
+            console.error('Error loading users:', err);
+        }
+    }
+
+    // ----------------------------------------------------------------------
     // API Fetchers & Renderers
     // ----------------------------------------------------------------------
 
@@ -118,40 +172,38 @@ document.addEventListener('DOMContentLoaded', () => {
             // Render Action Triggers
             if (data.action_triggers) {
                 triggerList.innerHTML = data.action_triggers.map(trig => `
-                    <div class="trigger-item">
-                        <div class="trig-info">
-                            <h4>
+                    <div class="trigger-card">
+                        <div class="trig-header">
+                            <span class="t-name">
                                 <span class="badge ${trig.market === 'domestic' ? 'up' : 'normal'}">${trig.market === 'domestic' ? '🇰🇷 국내' : '🇺🇸 해외'}</span>
-                                [${trig.ticker}] ${trig.name}
-                            </h4>
-                            <p>${trig.reason}</p>
-                            <p style="font-size:0.75rem; color:var(--color-subtext0); margin-top:2px;">↳ ${trig.action_desc}</p>
+                                ${trig.name} (${trig.ticker})
+                            </span>
+                            <span class="skill-pill"><i class="fa-solid fa-wand-magic-sparkles"></i> ${trig.recommended_skill}</span>
                         </div>
-                        <div class="trig-action">
-                            <span class="skill-pill"><i class="fa-solid fa-cube"></i> ${trig.recommended_skill}</span>
-                            <button class="btn-primary btn-sm btn-run-trig" data-ticker="${trig.ticker}" data-skill="${trig.recommended_skill}">
-                                스킬 실행 <i class="fa-solid fa-arrow-right"></i>
-                            </button>
-                        </div>
+                        <p class="trig-reason">${trig.reason}</p>
+                        <p class="trig-action">→ ${trig.action_desc}</p>
+                        <button class="btn-secondary btn-sm mt-2 btn-run-trigger" data-ticker="${trig.ticker}" data-skill="${trig.recommended_skill}">
+                            <i class="fa-solid fa-play"></i> 딥다이브 스킬 가동
+                        </button>
                     </div>
                 `).join('');
 
-                document.querySelectorAll('.btn-run-trig').forEach(btn => {
+                document.querySelectorAll('.btn-run-trigger').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const ticker = btn.getAttribute('data-ticker');
                         const skill = btn.getAttribute('data-skill');
-                        if (skill.includes('가격 판독기') || skill.includes('Price')) {
-                            document.getElementById('dcfTicker').value = ticker;
-                            switchTab('tab-price');
-                            runReverseDcf();
-                        } else if (skill.includes('스토리') || skill.includes('Story')) {
-                            document.getElementById('storyTickerInput').value = ticker;
-                            switchTab('tab-story');
-                            runStoryReader(ticker);
-                        } else {
+                        if (skill.includes('기업 해독기')) {
                             document.getElementById('decoderTickerInput').value = ticker;
                             switchTab('tab-decoder');
                             runCompanyDecoder(ticker);
+                        } else if (skill.includes('스토리 리더')) {
+                            document.getElementById('storyTickerInput').value = ticker;
+                            switchTab('tab-story');
+                            runStoryReader(ticker);
+                        } else if (skill.includes('가격 판독기')) {
+                            document.getElementById('dcfTicker').value = ticker;
+                            switchTab('tab-price');
+                            runReverseDcf();
                         }
                     });
                 });
@@ -163,40 +215,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 2. Fetch Watchlist (관심 종목)
+    // 2. Fetch Watchlist
     async function loadWatchlist() {
         try {
             const res = await fetch(`/api/watchlist?market=${currentMarketFilter}`);
-            const items = await res.json();
+            const list = await res.json();
 
-            if (items.length === 0) {
-                watchlistContainer.innerHTML = `<div class="content-card col-2 text-sub">등록된 관심 종목이 없습니다. 우측 상단의 '+ 관심 종목 추가' 버튼을 눌러보세요.</div>`;
-                return;
-            }
-
-            watchlistContainer.innerHTML = items.map(item => `
+            watchlistContainer.innerHTML = list.map(item => `
                 <div class="watchlist-card">
-                    <div class="watch-header">
-                        <div class="watch-title">
-                            <h4>
-                                <span class="badge ${item.market === 'domestic' ? 'up' : 'normal'}">${item.market === 'domestic' ? '🇰🇷 국내' : '🇺🇸 해외'}</span>
-                                ${item.name} (${item.ticker})
-                            </h4>
-                            <span style="font-size:0.75rem; color:var(--color-overlay0);">${item.sector}</span>
+                    <div class="wl-header">
+                        <div class="wl-title">
+                            <span class="badge ${item.market === 'domestic' ? 'up' : 'normal'}">${item.market === 'domestic' ? '🇰🇷 국내' : '🇺🇸 해외'}</span>
+                            <strong>${item.name}</strong> (${item.ticker})
                         </div>
-                        <div class="watch-price-box">
-                            <div class="watch-price" style="color:${item.change_pct.includes('-') ? 'var(--color-red)' : 'var(--color-green)'};">
-                                ${item.currency === 'USD' ? '$' : ''}${item.price.toLocaleString()} ${item.currency === 'KRW' ? '원' : ''}
-                            </div>
-                            <span class="badge ${item.change_pct.includes('-') ? 'down' : 'up'}">${item.change_pct}</span>
+                        <div class="wl-price">
+                            ${item.currency === 'USD' ? '$' : ''}${item.price.toLocaleString()} ${item.currency === 'KRW' ? '원' : ''}
+                            <span class="${item.change_pct.includes('+') ? 'up' : 'down'}">${item.change_pct}</span>
                         </div>
                     </div>
-                    <div class="watch-body">
-                        <p><i class="fa-solid fa-note-sticky text-yellow"></i> ${item.memo}</p>
-                    </div>
-                    <div class="watch-actions">
+                    <div class="wl-sector"><i class="fa-solid fa-tag"></i> ${item.sector}</div>
+                    <p class="wl-memo">${item.memo}</p>
+                    <div class="wl-actions mt-3">
                         <button class="btn-sm btn-outline btn-watch-skill" data-ticker="${item.ticker}" data-type="decoder">
-                            <i class="fa-solid fa-microscope"></i> 기업해독기
+                            <i class="fa-solid fa-microscope"></i> 기업해독
                         </button>
                         <button class="btn-sm btn-outline btn-watch-skill" data-ticker="${item.ticker}" data-type="story">
                             <i class="fa-solid fa-book-open"></i> 스토리리더
@@ -211,7 +252,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `).join('');
 
-            // Attach Skill & Delete Handlers
             document.querySelectorAll('.btn-watch-skill').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const ticker = btn.getAttribute('data-ticker');
@@ -288,12 +328,91 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 4. Load Portfolio Cockpit
+    // 4. Load Portfolio Cockpit & Real-Time Holdings
     async function loadPortfolioCockpit() {
         try {
             const res = await fetch(`/api/portfolio/cockpit?market=${currentMarketFilter}`);
             const data = await res.json();
 
+            // Stat Cards Update
+            document.getElementById('statTotalVal').innerText = `${data.total_eval_krw.toLocaleString()} 원`;
+            const pnlElem = document.getElementById('statPnlRatio');
+            const isUp = data.total_pnl_pct >= 0;
+            pnlElem.className = `trend ${isUp ? 'up' : 'down'}`;
+            pnlElem.innerHTML = `<i class="fa-solid fa-${isUp ? 'caret-up' : 'caret-down'}"></i> ${isUp ? '+' : ''}${data.total_pnl_pct}% (${data.total_pnl_krw.toLocaleString()} 원)`;
+
+            document.getElementById('statAssetRatio').innerText = `해외 ${data.intl_share_pct}% / 국내 ${data.domestic_share_pct}%`;
+            document.getElementById('statHhiStatus').innerText = `HHI: ${data.hhi.score} (${data.hhi.evaluation})`;
+
+            // Render HHI Score Box
+            document.getElementById('hhiScoreVal').innerText = data.hhi.score;
+            document.getElementById('hhiEvalText').innerText = data.hhi.evaluation;
+            document.getElementById('hhiDescText').innerText = data.hhi.desc;
+
+            // Render Holdings Table
+            const tbody = document.getElementById('portfolioHoldingsTbody');
+            tbody.innerHTML = data.assets_detail.map(a => `
+                <tr>
+                    <td><strong class="text-yellow">${a.ticker}</strong></td>
+                    <td>${a.name}</td>
+                    <td><span class="badge ${a.market === 'domestic' ? 'up' : 'normal'}">${a.market === 'domestic' ? '🇰🇷 국내' : '🇺🇸 해외'}</span></td>
+                    <td><span class="info-tag">${a.asset_type}</span></td>
+                    <td>${a.quantity.toLocaleString()}주</td>
+                    <td>${a.currency === 'USD' ? '$' : ''}${a.buy_price.toLocaleString()}</td>
+                    <td>${a.currency === 'USD' ? '$' : ''}${a.current_price.toLocaleString()}</td>
+                    <td><strong>${a.eval_krw.toLocaleString()} 원</strong></td>
+                    <td><span class="${a.pnl_pct >= 0 ? 'text-green' : 'text-red'}" style="font-weight:700;">${a.pnl_pct >= 0 ? '+' : ''}${a.pnl_pct.toFixed(2)}%</span></td>
+                    <td>
+                        <button class="btn-secondary btn-xs btn-edit-asset" data-asset='${JSON.stringify(a)}'><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn-danger btn-xs btn-del-asset" data-id="${a.id}"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Attach Asset Edit / Delete Event Listeners
+            document.querySelectorAll('.btn-edit-asset').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const item = JSON.parse(btn.getAttribute('data-asset'));
+                    document.getElementById('assetEditId').value = item.id;
+                    document.getElementById('assetMarket').value = item.market;
+                    document.getElementById('assetTicker').value = item.ticker;
+                    document.getElementById('assetName').value = item.name;
+                    document.getElementById('assetType').value = item.asset_type;
+                    document.getElementById('assetQuantity').value = item.quantity;
+                    document.getElementById('assetBuyPrice').value = item.buy_price;
+                    document.getElementById('assetCurrentPrice').value = item.current_price;
+                    document.getElementById('assetModalTitle').innerText = '보유 자산 수정';
+                    document.getElementById('assetModal').classList.add('active');
+                });
+            });
+
+            document.querySelectorAll('.btn-del-asset').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.getAttribute('data-id');
+                    if (confirm('선택한 자산을 포트폴리오에서 삭제하시겠습니까?')) {
+                        await fetch(`/api/portfolio/assets/${id}`, { method: 'DELETE' });
+                        loadPortfolioCockpit();
+                        loadDailyBriefing();
+                    }
+                });
+            });
+
+            // Render ETF Overlap List
+            const etfContainer = document.getElementById('etfOverlapList');
+            if (data.etf_overlap && data.etf_overlap.length > 0) {
+                etfContainer.innerHTML = data.etf_overlap.map(ov => `
+                    <div class="overlap-card">
+                        <div class="ov-title"><i class="fa-solid fa-box-archive"></i> ${ov.holding_etf}</div>
+                        <p class="ov-detail">${ov.effective_nvda_weight}</p>
+                        <p class="ov-detail">${ov.effective_aapl_weight}</p>
+                        <div class="alert-pill warning"><i class="fa-solid fa-triangle-exclamation"></i> ${ov.alert}</div>
+                    </div>
+                `).join('');
+            } else {
+                etfContainer.innerHTML = `<div class="text-sub">감지된 ETF 중복 노출 항목이 없습니다.</div>`;
+            }
+
+            // Doughnut Chart Render
             const ctx = document.getElementById('assetDoughnutChart').getContext('2d');
             if (assetChartInstance) assetChartInstance.destroy();
 
@@ -306,7 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     labels: labels,
                     datasets: [{
                         data: weights,
-                        backgroundColor: ['#cba6f7', '#89b4fa', '#a6e3a1', '#f9e2af'],
+                        backgroundColor: ['#cba6f7', '#89b4fa', '#a6e3a1', '#f9e2af', '#fab387', '#f38ba8'],
                         borderColor: '#1e1e2e',
                         borderWidth: 3
                     }]
@@ -348,54 +467,47 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p style="font-size:0.85rem; color:var(--color-subtext1);">${data.business_model}</p>
                     </div>
 
-                    <div class="card-grid col-2 mb-4">
+                    <div class="card-grid col-2 mb-3">
                         <div>
-                            <h4 style="font-size:0.9rem; color:var(--color-mauve); margin-bottom:8px;"><i class="fa-solid fa-chart-bar"></i> 사업 부문별 매출 비중</h4>
-                            <div class="table-responsive">
-                                <table class="data-table">
-                                    <thead><tr><th>부문 (Segment)</th><th>비중 (%)</th></tr></thead>
-                                    <tbody>
-                                        ${data.segment_revenue.map(s => `<tr><td>${s.segment}</td><td><strong>${s.share}%</strong></td></tr>`).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
+                            <h4 style="font-size:0.85rem; margin-bottom:6px;"><i class="fa-solid fa-pie-chart text-mauve"></i> 사업부문별 매출 비중</h4>
+                            ${data.segment_revenue.map(s => `
+                                <div style="font-size:0.8rem; margin-bottom:4px; display:flex; justify-between;">
+                                    <span>${s.segment}</span>
+                                    <strong class="text-mauve">${s.share}%</strong>
+                                </div>
+                            `).join('')}
                         </div>
                         <div>
-                            <h4 style="font-size:0.9rem; color:var(--color-teal); margin-bottom:8px;"><i class="fa-solid fa-earth-americas"></i> 지역별 매출 분포</h4>
-                            <div class="table-responsive">
-                                <table class="data-table">
-                                    <thead><tr><th>지역 (Region)</th><th>비중 (%)</th></tr></thead>
-                                    <tbody>
-                                        ${data.geo_revenue.map(g => `<tr><td>${g.region}</td><td><strong>${g.share}%</strong></td></tr>`).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
+                            <h4 style="font-size:0.85rem; margin-bottom:6px;"><i class="fa-solid fa-globe text-teal"></i> 지역별 매출 비중</h4>
+                            ${data.geo_revenue.map(g => `
+                                <div style="font-size:0.8rem; margin-bottom:4px; display:flex; justify-between;">
+                                    <span>${g.region}</span>
+                                    <strong class="text-teal">${g.share}%</strong>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
 
-                    <h4 style="font-size:0.9rem; color:var(--color-yellow); margin-bottom:8px;"><i class="fa-solid fa-key"></i> 업종 핵심 추적 KPI</h4>
-                    <div class="card-grid col-4 mb-3">
+                    <h4 style="font-size:0.85rem; margin-bottom:6px;"><i class="fa-solid fa-list-check text-yellow"></i> 핵심 모니터링 KPI</h4>
+                    <div class="card-grid col-3">
                         ${data.kpis.map(k => `
-                            <div class="metric-card">
-                                <span class="m-label">${k.name}</span>
-                                <span class="m-value" style="font-size:1.1rem; color:var(--color-mauve);">${k.value}</span>
-                                <span class="badge success" style="width:fit-content;">${k.status}</span>
+                            <div style="background:rgba(255,255,255,0.03); padding:8px 12px; border-radius:8px;">
+                                <div style="font-size:0.75rem; color:var(--color-subtext0);">${k.name}</div>
+                                <strong style="font-size:1rem; color:var(--color-mauve);">${k.value}</strong>
                             </div>
                         `).join('')}
                     </div>
-
-                    <p style="font-size:0.75rem; color:var(--color-overlay0); text-align:right;">📌 문서 출처: ${data.source_doc}</p>
                 </div>
             `;
         } catch (err) {
-            container.innerHTML = `<div class="content-card text-red">오류가 발생했습니다: ${err.message}</div>`;
+            container.innerHTML = `<div class="content-card text-red">해독 실패: ${err.message}</div>`;
         }
     }
 
     // 6. Run Story Reader Skill
     async function runStoryReader(ticker) {
         const container = document.getElementById('storyResultContainer');
-        container.innerHTML = `<div class="content-card"><i class="fa-solid fa-spinner fa-spin text-flamingo"></i> [${ticker}] 최근 3개년 공시 및 어닝콜 문구 변화 대조 중...</div>`;
+        container.innerHTML = `<div class="content-card"><i class="fa-solid fa-spinner fa-spin text-flamingo"></i> [${ticker}] 최근 3개년 공시 및 어닝콜 문구 대조 중...</div>`;
 
         try {
             const res = await fetch(`/api/stock/story/${ticker}`);
@@ -404,31 +516,27 @@ document.addEventListener('DOMContentLoaded', () => {
             container.innerHTML = `
                 <div class="content-card mb-4">
                     <div class="card-header">
-                        <h3>
-                            <span class="badge ${data.market === 'domestic' ? 'up' : 'normal'}">${data.market === 'domestic' ? '🇰🇷 국내' : '🇺🇸 해외'}</span>
-                            <i class="fa-solid fa-film text-flamingo"></i> [${data.ticker}] 3개년 변화 비교 및 톤변화 포착
-                        </h3>
+                        <h3><i class="fa-solid fa-timeline text-flamingo"></i> ${data.ticker} 지난 3개년 스토리 추적</h3>
                         <span class="info-tag">${data.period}</span>
                     </div>
 
-                    <h4 style="font-size:0.95rem; color:var(--color-mauve); margin-bottom:10px;"><i class="fa-solid fa-magnifying-glass-chart"></i> 주요 공시 문구 표현 변화 (Tone Shift)</h4>
-                    <div class="trigger-list mb-4">
-                        ${data.tone_changes.map(tc => `
-                            <div class="trigger-item" style="flex-direction:column; align-items:flex-start;">
-                                <div style="display:flex; justify-content:space-between; width:100%; font-size:0.85rem;">
-                                    <strong style="color:var(--color-yellow);">${tc.topic}</strong>
-                                    <span class="badge ${tc.shift.includes('Tone-Down') ? 'down' : 'up'}">${tc.shift}</span>
-                                </div>
-                                <p style="font-size:0.8rem; color:var(--color-subtext0); margin-top:4px;">❌ 과거: "${tc.old_text}"</p>
-                                <p style="font-size:0.82rem; color:var(--color-text); margin-top:2px;">👉 변경: "${tc.new_text}"</p>
+                    <h4 style="font-size:0.9rem; color:var(--color-flamingo); margin-bottom:8px;"><i class="fa-solid fa-quote-left"></i> 10-K & 공시 문구 톤 변화 (Tone Shift)</h4>
+                    <div class="mb-4">
+                        ${data.tone_changes.map(t => `
+                            <div style="background:rgba(49, 50, 68, 0.4); border-left:3px solid var(--color-flamingo); padding:10px 14px; margin-bottom:8px; border-radius:0 8px 8px 0;">
+                                <div style="font-size:0.8rem; font-weight:700; color:var(--color-peach);">${t.topic} [${t.shift}]</div>
+                                <div style="font-size:0.78rem; color:var(--color-subtext0); margin-top:2px;">이전: ${t.old_text}</div>
+                                <div style="font-size:0.78rem; color:var(--color-text); font-weight:600; margin-top:2px;">최근: ${t.new_text}</div>
                             </div>
                         `).join('')}
                     </div>
 
-                    <h4 style="font-size:0.95rem; color:var(--color-teal); margin-bottom:10px;"><i class="fa-solid fa-list-check"></i> 경영진 가이던스 이행 이력 (Guidance Track Record)</h4>
+                    <h4 style="font-size:0.9rem; color:var(--color-green); margin-bottom:8px;"><i class="fa-solid fa-handshake"></i> 경영진 어닝콜 약속 vs 실제 실적</h4>
                     <div class="table-responsive">
                         <table class="data-table">
-                            <thead><tr><th>분기</th><th>약속 가이던스</th><th>실제 성과</th><th>결과</th></tr></thead>
+                            <thead>
+                                <tr><th>분기</th><th>약속 가이던스</th><th>실제 달성치</th><th>결과</th></tr>
+                            </thead>
                             <tbody>
                                 ${data.guidance_track_record.map(g => `
                                     <tr>
@@ -444,14 +552,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
         } catch (err) {
-            container.innerHTML = `<div class="content-card text-red">오류가 발생했습니다: ${err.message}</div>`;
+            container.innerHTML = `<div class="content-card text-red">스토리 조회 실패: ${err.message}</div>`;
         }
     }
 
-    // 7. Run Reverse DCF Price Decoder
+    // 7. Run Reverse DCF Calculation
     async function runReverseDcf() {
         const container = document.getElementById('priceDecoderResult');
-        container.innerHTML = `<div class="content-card"><i class="fa-solid fa-spinner fa-spin text-peach"></i> 역DCF 방정식을 통한 요구 성장률 계산 중...</div>`;
+        container.innerHTML = `<div class="content-card"><i class="fa-solid fa-spinner fa-spin text-peach"></i> 요구 성장률 역산 매트릭스 계산 중...</div>`;
 
         const payload = {
             ticker: document.getElementById('dcfTicker').value,
@@ -473,29 +581,16 @@ document.addEventListener('DOMContentLoaded', () => {
             container.innerHTML = `
                 <div class="content-card mb-4">
                     <div class="card-header">
-                        <h3><i class="fa-solid fa-balance-scale text-peach"></i> [${data.ticker}] 역DCF 요구 성장률 산출 결과</h3>
-                        <span class="badge ${data.gap > 5 ? 'down' : 'success'}">${data.safety_assessment}</span>
+                        <h3><i class="fa-solid fa-scale-balanced text-peach"></i> ${data.ticker} 가격 판독 (Reverse DCF 결론)</h3>
+                        <span class="badge ${data.gap > 5 ? 'down' : 'up'}">${data.safety_assessment}</span>
                     </div>
 
-                    <div class="card-grid col-2 mb-4">
-                        <div class="metric-card" style="border-color:var(--color-peach);">
-                            <span class="m-label"><i class="fa-solid fa-bullseye"></i> 시가총액 반영 필요 연간 FCF 성장률</span>
-                            <span class="m-value text-peach" style="font-size:1.8rem;">연 +${data.implied_annual_growth}%</span>
-                            <p class="m-desc">현재 주가 ${data.current_price}가 설명되기 위해 회사가 달성해야 하는 10년 성장률</p>
-                        </div>
-                        <div class="metric-card">
-                            <span class="m-label"><i class="fa-solid fa-history"></i> 과거 5년 실제 FCF 성장률 (CAGR)</span>
-                            <span class="m-value text-teal" style="font-size:1.8rem;">연 +${data.past_5y_cagr}%</span>
-                            <p class="m-desc">실제 과거 실적 성장치와 요구 성장률의 갭: <strong class="${data.gap > 5 ? 'text-red' : 'text-green'}">${data.gap > 0 ? '+' : ''}${data.gap}%p</strong></p>
-                        </div>
+                    <div class="hhi-box mb-3" style="background:rgba(250, 179, 135, 0.1); border:1px solid rgba(250, 179, 135, 0.3); padding:1rem; border-radius:12px;">
+                        <h4 style="color:var(--color-peach); font-size:1rem;"><i class="fa-solid fa-calculator"></i> 내포된 요구 성장률: 연 평균 +${data.implied_annual_growth}%</h4>
+                        <p style="font-size:0.85rem; color:var(--color-subtext1); margin-top:4px;">${data.evaluation_summary}</p>
                     </div>
 
-                    <div class="hhi-box mb-4" style="background:rgba(49, 50, 68, 0.4); padding:1rem; border-radius:12px;">
-                        <h4 style="color:var(--color-mauve); font-size:0.9rem; margin-bottom:4px;"><i class="fa-solid fa-circle-info"></i> 가격 판독기 종합 가치 진단</h4>
-                        <p style="font-size:0.88rem; color:var(--color-text);">${data.evaluation_summary}</p>
-                    </div>
-
-                    <h4 style="font-size:0.95rem; color:var(--color-sapphire); margin-bottom:10px;"><i class="fa-solid fa-table-cells"></i> WACC & 영구성장률 민감도 표 (Sensitivity Matrix)</h4>
+                    <h4 style="font-size:0.85rem; margin-bottom:6px;"><i class="fa-solid fa-table-cells text-mauve"></i> WACC & 영구성장률(g) 민감도 매트릭스</h4>
                     <div class="table-responsive">
                         <table class="data-table">
                             <thead>
@@ -540,12 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Watchlist Modal Controls
     const addWatchlistModal = document.getElementById('addWatchlistModal');
-    const openWatchModalBtns = [document.getElementById('btnOpenAddWatchlistModal'), document.getElementById('btnOpenAddWatchlistModal2')];
-    
-    openWatchModalBtns.forEach(b => {
-        if (b) b.addEventListener('click', () => addWatchlistModal.classList.add('active'));
-    });
-
+    document.getElementById('btnOpenAddWatchlistModal').addEventListener('click', () => addWatchlistModal.classList.add('active'));
     document.getElementById('btnCloseAddWatchlistModal').addEventListener('click', () => addWatchlistModal.classList.remove('active'));
 
     document.getElementById('btnSubmitAddWatchlist').addEventListener('click', async () => {
@@ -604,7 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Login Modal
+    // Login Modal Handlers
     const loginModal = document.getElementById('loginModal');
     document.getElementById('btnLoginModal').addEventListener('click', () => loginModal.classList.add('active'));
     document.getElementById('btnCloseLoginModal').addEventListener('click', () => loginModal.classList.remove('active'));
@@ -621,8 +711,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (data.success) {
                 currentUser = data.user;
-                document.getElementById('userNameDisplay').innerText = currentUser.name;
-                alert(`환영합니다 ${currentUser.name}님!`);
+                updateUserUI();
+                alert(`환영합니다 ${currentUser.name}님! 로그인 되었습니다.`);
                 loginModal.classList.remove('active');
             } else {
                 alert(data.message);
@@ -632,9 +722,104 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // User Whitelist Management Modal Handlers
+    const userMgmtModal = document.getElementById('userMgmtModal');
+    btnOpenUserMgmt.addEventListener('click', () => {
+        userMgmtModal.classList.add('active');
+        loadWhitelistedUsers();
+    });
+    document.getElementById('btnCloseUserMgmtModal').addEventListener('click', () => userMgmtModal.classList.remove('active'));
+
+    document.getElementById('btnSubmitAddUser').addEventListener('click', async () => {
+        const payload = {
+            email: document.getElementById('newUserEmail').value.trim(),
+            password: document.getElementById('newUserPass').value.trim(),
+            name: document.getElementById('newUserName').value.trim(),
+            role: document.getElementById('newUserRole').value
+        };
+
+        if (!payload.email || !payload.password || !payload.name) {
+            return alert('이메일, 비밀번호, 이름은 필수 입력 항목입니다.');
+        }
+
+        try {
+            const res = await fetch('/api/auth/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message);
+                document.getElementById('newUserEmail').value = '';
+                document.getElementById('newUserPass').value = '';
+                document.getElementById('newUserName').value = '';
+                loadWhitelistedUsers();
+            } else {
+                alert(data.message);
+            }
+        } catch (err) {
+            alert('허가 계정 추가 실패: ' + err.message);
+        }
+    });
+
+    // Asset Management Modal Handlers
+    const assetModal = document.getElementById('assetModal');
+    document.getElementById('btnOpenAddAssetModal').addEventListener('click', () => {
+        document.getElementById('assetEditId').value = '';
+        document.getElementById('assetTicker').value = '';
+        document.getElementById('assetName').value = '';
+        document.getElementById('assetQuantity').value = '';
+        document.getElementById('assetBuyPrice').value = '';
+        document.getElementById('assetCurrentPrice').value = '';
+        document.getElementById('assetModalTitle').innerText = '보유 자산 등록';
+        assetModal.classList.add('active');
+    });
+    document.getElementById('btnCloseAssetModal').addEventListener('click', () => assetModal.classList.remove('active'));
+
+    document.getElementById('btnSubmitAsset').addEventListener('click', async () => {
+        const editId = document.getElementById('assetEditId').value;
+        const payload = {
+            market: document.getElementById('assetMarket').value,
+            ticker: document.getElementById('assetTicker').value.trim(),
+            name: document.getElementById('assetName').value.trim(),
+            asset_type: document.getElementById('assetType').value,
+            quantity: document.getElementById('assetQuantity').value,
+            buy_price: document.getElementById('assetBuyPrice').value,
+            current_price: document.getElementById('assetCurrentPrice').value
+        };
+
+        if (!payload.ticker || !payload.name || !payload.quantity || !payload.buy_price) {
+            return alert('종목 티커, 종목명, 수량, 매수 평단가는 필수 입력 항목입니다.');
+        }
+
+        try {
+            const url = editId ? `/api/portfolio/assets/${editId}` : '/api/portfolio/assets';
+            const method = editId ? 'PUT' : 'POST';
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message);
+                assetModal.classList.remove('active');
+                loadPortfolioCockpit();
+                loadDailyBriefing();
+            } else {
+                alert(data.message);
+            }
+        } catch (err) {
+            alert('자산 저장 실패: ' + err.message);
+        }
+    });
+
     // Initialize App
+    updateUserUI();
     loadDailyBriefing();
     loadWatchlist();
+    loadPortfolioCockpit();
     runCompanyDecoder('NVDA');
     runStoryReader('AAPL');
     runReverseDcf();

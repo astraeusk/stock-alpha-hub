@@ -9,19 +9,98 @@ from flask_cors import CORS
 app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 
-# Allowed 10 Whitelisted Users Simulation
-WHITELIST_USERS = {
-    "admin@alpha.com": {"name": "우성교 (Master)", "role": "admin", "pass": "alpha123"},
-    "user1@alpha.com": {"name": "투자자 A", "role": "member", "pass": "invest1"},
-    "user2@alpha.com": {"name": "투자자 B", "role": "member", "pass": "invest2"}
+DATA_STORE_PATH = os.path.join(os.path.dirname(__file__), 'data_store.json')
+
+# Default Data Store
+DEFAULT_DATA = {
+    "whitelist_users": {
+        "admin@alpha.com": {"name": "우성교 (Master)", "role": "admin", "pass": "alpha123"},
+        "user1@alpha.com": {"name": "투자자 A", "role": "member", "pass": "invest1"},
+        "user2@alpha.com": {"name": "투자자 B", "role": "member", "pass": "invest2"}
+    },
+    "portfolio": [
+        {
+            "id": "p1",
+            "ticker": "NVDA",
+            "name": "엔비디아",
+            "market": "international",
+            "asset_type": "개별주",
+            "quantity": 50,
+            "buy_price": 110.0,
+            "current_price": 128.50,
+            "currency": "USD"
+        },
+        {
+            "id": "p2",
+            "ticker": "AAPL",
+            "name": "애플",
+            "market": "international",
+            "asset_type": "개별주",
+            "quantity": 40,
+            "buy_price": 195.0,
+            "current_price": 218.20,
+            "currency": "USD"
+        },
+        {
+            "id": "p3",
+            "ticker": "QQQ",
+            "name": "Invesco QQQ Trust",
+            "market": "international",
+            "asset_type": "지수 ETF",
+            "quantity": 30,
+            "buy_price": 440.0,
+            "current_price": 480.00,
+            "currency": "USD"
+        },
+        {
+            "id": "p4",
+            "ticker": "000660",
+            "name": "SK하이닉스",
+            "market": "domestic",
+            "asset_type": "개별주",
+            "quantity": 100,
+            "buy_price": 155000,
+            "current_price": 178500,
+            "currency": "KRW"
+        },
+        {
+            "id": "p5",
+            "ticker": "005930",
+            "name": "삼성전자",
+            "market": "domestic",
+            "asset_type": "개별주",
+            "quantity": 200,
+            "buy_price": 71000,
+            "current_price": 74500,
+            "currency": "KRW"
+        }
+    ]
 }
 
-# Watchlist Data Storage (Domestic & International)
+def load_data_store():
+    if not os.path.exists(DATA_STORE_PATH):
+        save_data_store(DEFAULT_DATA)
+        return DEFAULT_DATA
+    try:
+        with open(DATA_STORE_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        print("Data store load error:", e)
+        return DEFAULT_DATA
+
+def save_data_store(data):
+    try:
+        with open(DATA_STORE_PATH, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print("Data store save error:", e)
+
+# In-memory Watchlist
 WATCHLIST = [
     {
         "ticker": "NVDA",
         "name": "엔비디아",
-        "market": "international", # 'domestic' | 'international'
+        "market": "international",
         "currency": "USD",
         "price": 128.50,
         "change_pct": "+2.4%",
@@ -60,7 +139,7 @@ WATCHLIST = [
     }
 ]
 
-# In-memory storage for KakaoTalk Ingested Messages
+# KakaoTalk messages
 KAKAOTALK_MESSAGES = [
     {
         "id": 1,
@@ -97,7 +176,6 @@ KAKAOTALK_MESSAGES = [
     }
 ]
 
-# Stock Database for 2nd Layer Deep Dive
 STOCK_DECODER_DATA = {
     "NVDA": {
         "name": "NVIDIA Corporation",
@@ -267,25 +345,280 @@ STORY_READER_DATA = {
 def index():
     return send_from_directory('static', 'index.html')
 
+# -------------------------------------------------------------------------
+# AUTH & USER WHITELIST APIS
+# -------------------------------------------------------------------------
+
 @app.route('/api/auth/login', methods=['POST'])
 def auth_login():
-    data = request.json or {}
-    email = data.get('email', '').strip()
-    password = data.get('password', '').strip()
+    data_store = load_data_store()
+    users = data_store.get('whitelist_users', {})
     
-    if email in WHITELIST_USERS and WHITELIST_USERS[email]['pass'] == password:
-        user_info = WHITELIST_USERS[email]
+    req = request.json or {}
+    email = req.get('email', '').strip()
+    password = req.get('password', '').strip()
+    
+    if email in users and users[email]['pass'] == password:
+        u_info = users[email]
         return jsonify({
             "success": True,
             "token": f"auth_token_{int(time.time())}_{email}",
             "user": {
                 "email": email,
-                "name": user_info['name'],
-                "role": user_info['role']
+                "name": u_info['name'],
+                "role": u_info['role']
             },
-            "capacity": "10인 허용 화이트리스트 접근 가능"
+            "capacity": f"화이트리스트 세션 승인 ({len(users)}명 허가 상태)"
         })
-    return jsonify({"success": False, "message": "등록되지 않은 화이트리스트 계정이거나 비밀번호가 일치하지 않습니다."}), 401
+    return jsonify({"success": False, "message": "등록되지 않은 허가 계정이거나 비밀번호가 일치하지 않습니다."}), 401
+
+@app.route('/api/auth/users', methods=['GET'])
+def get_whitelisted_users():
+    data_store = load_data_store()
+    users = data_store.get('whitelist_users', {})
+    res = []
+    for email, info in users.items():
+        res.append({
+            "email": email,
+            "name": info['name'],
+            "role": info['role']
+        })
+    return jsonify(res)
+
+@app.route('/api/auth/users', methods=['POST'])
+def add_whitelisted_user():
+    data_store = load_data_store()
+    users = data_store.get('whitelist_users', {})
+    
+    req = request.json or {}
+    email = req.get('email', '').strip()
+    password = req.get('password', '').strip()
+    name = req.get('name', '').strip()
+    role = req.get('role', 'member').strip()
+    
+    if not email or not password or not name:
+        return jsonify({"success": False, "message": "이메일, 비밀번호, 이름은 필수입니다."}), 400
+        
+    users[email] = {
+        "name": name,
+        "role": role,
+        "pass": password
+    }
+    data_store['whitelist_users'] = users
+    save_data_store(data_store)
+    
+    return jsonify({"success": True, "message": f"[{name} ({email})] 허가 계정이 등록되었습니다.", "users": get_whitelisted_users().json})
+
+@app.route('/api/auth/users/<path:email>', methods=['DELETE'])
+def delete_whitelisted_user(email):
+    data_store = load_data_store()
+    users = data_store.get('whitelist_users', {})
+    
+    if email == "admin@alpha.com":
+        return jsonify({"success": False, "message": "최고 관리자(Master) 계정은 삭제할 수 없습니다."}), 400
+        
+    if email in users:
+        del users[email]
+        data_store['whitelist_users'] = users
+        save_data_store(data_store)
+        return jsonify({"success": True, "message": f"[{email}] 허가 계정이 삭제되었습니다."})
+    return jsonify({"success": False, "message": "해당 계정을 찾을 수 없습니다."}), 404
+
+# -------------------------------------------------------------------------
+# PORTFOLIO ASSET APIS & REAL-TIME ANALYTICS
+# -------------------------------------------------------------------------
+
+@app.route('/api/portfolio/assets', methods=['GET'])
+def get_portfolio_assets():
+    data_store = load_data_store()
+    portfolio = data_store.get('portfolio', [])
+    market_filter = request.args.get('market', 'all')
+    if market_filter in ['domestic', 'international']:
+        portfolio = [p for p in portfolio if p['market'] == market_filter]
+    return jsonify(portfolio)
+
+@app.route('/api/portfolio/assets', methods=['POST'])
+def add_portfolio_asset():
+    data_store = load_data_store()
+    portfolio = data_store.get('portfolio', [])
+    
+    req = request.json or {}
+    ticker = req.get('ticker', '').strip().upper()
+    name = req.get('name', '').strip()
+    market = req.get('market', 'international')
+    asset_type = req.get('asset_type', '개별주')
+    quantity = float(req.get('quantity', 1))
+    buy_price = float(req.get('buy_price', 100))
+    current_price = float(req.get('current_price', buy_price))
+    currency = "KRW" if market == "domestic" else "USD"
+    
+    if not ticker or not name:
+        return jsonify({"success": False, "message": "티커와 종목명은 필수입니다."}), 400
+        
+    new_asset = {
+        "id": f"p_{int(time.time()*1000)}",
+        "ticker": ticker,
+        "name": name,
+        "market": market,
+        "asset_type": asset_type,
+        "quantity": quantity,
+        "buy_price": buy_price,
+        "current_price": current_price,
+        "currency": currency
+    }
+    
+    portfolio.append(new_asset)
+    data_store['portfolio'] = portfolio
+    save_data_store(data_store)
+    return jsonify({"success": True, "message": f"[{name} ({ticker})] 자산이 성공적으로 등록되었습니다.", "portfolio": portfolio})
+
+@app.route('/api/portfolio/assets/<asset_id>', methods=['PUT'])
+def update_portfolio_asset(asset_id):
+    data_store = load_data_store()
+    portfolio = data_store.get('portfolio', [])
+    
+    req = request.json or {}
+    for item in portfolio:
+        if item['id'] == asset_id:
+            item['ticker'] = req.get('ticker', item['ticker']).upper()
+            item['name'] = req.get('name', item['name'])
+            item['market'] = req.get('market', item['market'])
+            item['asset_type'] = req.get('asset_type', item['asset_type'])
+            item['quantity'] = float(req.get('quantity', item['quantity']))
+            item['buy_price'] = float(req.get('buy_price', item['buy_price']))
+            item['current_price'] = float(req.get('current_price', item['current_price']))
+            item['currency'] = "KRW" if item['market'] == "domestic" else "USD"
+            
+            data_store['portfolio'] = portfolio
+            save_data_store(data_store)
+            return jsonify({"success": True, "message": f"[{item['name']}] 자산 정보가 수정되었습니다.", "asset": item})
+            
+    return jsonify({"success": False, "message": "자산을 찾을 수 없습니다."}), 404
+
+@app.route('/api/portfolio/assets/<asset_id>', methods=['DELETE'])
+def delete_portfolio_asset(asset_id):
+    data_store = load_data_store()
+    portfolio = data_store.get('portfolio', [])
+    
+    updated_p = [p for p in portfolio if p['id'] != asset_id]
+    data_store['portfolio'] = updated_p
+    save_data_store(data_store)
+    return jsonify({"success": True, "message": "자산이 삭제되었습니다.", "portfolio": updated_p})
+
+@app.route('/api/portfolio/cockpit', methods=['GET'])
+def get_portfolio_cockpit():
+    market_filter = request.args.get('market', 'all')
+    data_store = load_data_store()
+    portfolio = data_store.get('portfolio', [])
+    
+    usd_krw = 1384.50
+    
+    if market_filter in ['domestic', 'international']:
+        portfolio = [p for p in portfolio if p['market'] == market_filter]
+        
+    total_eval_krw = 0.0
+    total_invest_krw = 0.0
+    domestic_eval_krw = 0.0
+    intl_eval_krw = 0.0
+    
+    asset_items = []
+    for item in portfolio:
+        price = item.get('current_price', 100.0)
+        buy = item.get('buy_price', 100.0)
+        qty = item.get('quantity', 1.0)
+        curr = item.get('currency', 'USD')
+        rate = usd_krw if curr == 'USD' else 1.0
+        
+        eval_krw = qty * price * rate
+        invest_krw = qty * buy * rate
+        pnl_krw = eval_krw - invest_krw
+        pnl_pct = ((eval_krw - invest_krw) / invest_krw * 100.0) if invest_krw > 0 else 0.0
+        
+        total_eval_krw += eval_krw
+        total_invest_krw += invest_krw
+        
+        if item['market'] == 'domestic':
+            domestic_eval_krw += eval_krw
+        else:
+            intl_eval_krw += eval_krw
+            
+        asset_items.append({
+            "id": item['id'],
+            "ticker": item['ticker'],
+            "name": item['name'],
+            "market": item['market'],
+            "asset_type": item['asset_type'],
+            "quantity": qty,
+            "buy_price": buy,
+            "current_price": price,
+            "currency": curr,
+            "eval_krw": eval_krw,
+            "invest_krw": invest_krw,
+            "pnl_krw": pnl_krw,
+            "pnl_pct": pnl_pct
+        })
+        
+    # Calculate Weights & HHI Index
+    hhi_score = 0.0
+    asset_alloc = []
+    for item in asset_items:
+        weight = (item['eval_krw'] / total_eval_krw * 100.0) if total_eval_krw > 0 else 0.0
+        item['weight'] = round(weight, 1)
+        hhi_score += (weight / 100.0) ** 2
+        
+        eval_method = "10-K & 역DCF 가능" if item['asset_type'] == '개별주' else "지수 총계 밸류에이션"
+        asset_alloc.append({
+            "type": f"{item['name']} ({item['ticker']})",
+            "market": item['market'],
+            "weight": round(weight, 1),
+            "eval_krw": item['eval_krw'],
+            "fundamental_eval": eval_method
+        })
+        
+    hhi_eval = "안정적 분산 (Safe Diversification)" if hhi_score < 0.25 else ("주의: 쏠림 경고 (Concentration Risk)" if hhi_score < 0.40 else "위험: 극단적 집중 (High Risk)")
+    hhi_desc = f"해외 자산({(intl_eval_krw/total_eval_krw*100):.1f}%) 및 국내 자산({(domestic_eval_krw/total_eval_krw*100):.1f}%) 평가 총액 합산 분석." if total_eval_krw > 0 else "등록된 보유 자산이 없습니다."
+
+    # ETF Overlap Logic
+    qqq_holding = next((i for i in asset_items if i['ticker'] == 'QQQ'), None)
+    nvda_holding = next((i for i in asset_items if i['ticker'] == 'NVDA'), None)
+    aapl_holding = next((i for i in asset_items if i['ticker'] == 'AAPL'), None)
+    
+    etf_overlap = []
+    if qqq_holding:
+        nvda_w = nvda_holding['weight'] if nvda_holding else 0.0
+        aapl_w = aapl_holding['weight'] if aapl_holding else 0.0
+        overlap_nvda = round(nvda_w + (qqq_holding['weight'] * 0.08), 1)
+        overlap_aapl = round(aapl_w + (qqq_holding['weight'] * 0.085), 1)
+        
+        etf_overlap.append({
+            "holding_etf": "QQQ (Invesco QQQ Trust)",
+            "market": "international",
+            "overlapping_single_stock": "NVDA, AAPL, MSFT",
+            "effective_nvda_weight": f"개별주 {nvda_w}% + QQQ 경유 {(qqq_holding['weight'] * 0.08):.1f}% = 실질 노출 {overlap_nvda}%",
+            "effective_aapl_weight": f"개별주 {aapl_w}% + QQQ 경유 {(qqq_holding['weight'] * 0.085):.1f}% = 실질 노출 {overlap_aapl}%",
+            "alert": "QQQ 지수 ETF 보유로 인한 빅테크 상위 종목 가중 중복 노출 유의"
+        })
+
+    return jsonify({
+        "total_eval_krw": round(total_eval_krw),
+        "total_invest_krw": round(total_invest_krw),
+        "total_pnl_krw": round(total_eval_krw - total_invest_krw),
+        "total_pnl_pct": round(((total_eval_krw - total_invest_krw)/total_invest_krw*100), 2) if total_invest_krw > 0 else 0,
+        "domestic_share_pct": round((domestic_eval_krw / total_eval_krw * 100), 1) if total_eval_krw > 0 else 0,
+        "intl_share_pct": round((intl_eval_krw / total_eval_krw * 100), 1) if total_eval_krw > 0 else 0,
+        "hhi": {
+            "score": round(hhi_score, 3),
+            "evaluation": hhi_eval,
+            "desc": hhi_desc
+        },
+        "etf_overlap": etf_overlap,
+        "asset_allocation": asset_alloc,
+        "assets_detail": asset_items
+    })
+
+# -------------------------------------------------------------------------
+# WATCHLIST & BRIEFING APIS
+# -------------------------------------------------------------------------
 
 @app.route('/api/watchlist', methods=['GET'])
 def get_watchlist():
@@ -300,7 +633,7 @@ def add_watchlist():
     data = request.json or {}
     ticker = data.get('ticker', '').strip().upper()
     name = data.get('name', '').strip()
-    market = data.get('market', 'international') # 'domestic' or 'international'
+    market = data.get('market', 'international')
     sector = data.get('sector', '기타').strip()
     memo = data.get('memo', '').strip()
     price = float(data.get('price', 100.0))
@@ -308,7 +641,6 @@ def add_watchlist():
     if not ticker or not name:
         return jsonify({"success": False, "message": "티커와 종목명은 필수입니다."}), 400
 
-    # Check if already exists
     for item in WATCHLIST:
         if item['ticker'] == ticker:
             item['name'] = name
@@ -341,6 +673,13 @@ def delete_watchlist(ticker):
 @app.route('/api/briefing', methods=['GET'])
 def get_briefing():
     market_filter = request.args.get('market', 'all')
+    data_store = load_data_store()
+    portfolio = data_store.get('portfolio', [])
+    
+    usd_krw = 1384.50
+    total_val = sum(p['quantity'] * p['current_price'] * (usd_krw if p['currency']=='USD' else 1) for p in portfolio)
+    dom_val = sum(p['quantity'] * p['current_price'] for p in portfolio if p['market']=='domestic')
+    intl_val = total_val - dom_val
     
     triggers = [
         {
@@ -366,14 +705,6 @@ def get_briefing():
             "reason": "카톡 추천 리포트 목표가 $150 상향 소식 입수",
             "recommended_skill": "기업 해독기 (Company Decoder)",
             "action_desc": "데이터센터 사업부 매출 비중 및 10-Q 세부 검증"
-        },
-        {
-            "ticker": "005930",
-            "name": "삼성전자",
-            "market": "domestic",
-            "reason": "국내 2나노 파운드리 수주 공시 및 HBM 12단 퀄테스트 임박",
-            "recommended_skill": "기업 해독기 (Company Decoder)",
-            "action_desc": "DS 부문 반도체 마진율 및 수율 지표 체크"
         }
     ]
 
@@ -391,47 +722,17 @@ def get_briefing():
         },
         "action_triggers": triggers,
         "portfolio_summary": {
-            "total_value_krw": "452,300,000 원",
-            "domestic_value_krw": "98,400,000 원 (22%)",
-            "international_value_krw": "353,900,000 원 (78%)",
+            "total_value_krw": f"{total_val:,.0f} 원",
+            "domestic_value_krw": f"{dom_val:,.0f} 원 ({(dom_val/total_val*100 if total_val else 0):.1f}%)",
+            "international_value_krw": f"{intl_val:,.0f} 원 ({(intl_val/total_val*100 if total_val else 0):.1f}%)",
             "daily_pnl_krw": "+3,850,000 원 (+0.86%)",
-            "hhi_index": 0.22,
-            "hhi_status": "적정 분산 (HHI < 0.25)"
+            "hhi_status": "적정 분산"
         }
     })
 
-@app.route('/api/portfolio/cockpit', methods=['GET'])
-def get_portfolio_cockpit():
-    market_filter = request.args.get('market', 'all')
-    
-    asset_alloc = [
-        {"type": "미국 개별 빅테크 (NVDA, AAPL)", "market": "international", "weight": 46, "fundamental_eval": "펀더멘털 & 역DCF 가능"},
-        {"type": "미국 지수 ETF (QQQ, SPY)", "market": "international", "weight": 32, "fundamental_eval": "지수 총계 밸류에이션"},
-        {"type": "국내 반도체 (SK하이닉스, 삼성전자)", "market": "domestic", "weight": 14, "fundamental_eval": "어닝콜 & HBM 수율 추적"},
-        {"type": "금/원자재 ETF (GLD)", "market": "international", "weight": 8, "fundamental_eval": "실질금리 & 달러 인덱스 연동"}
-    ]
-
-    if market_filter in ['domestic', 'international']:
-        asset_alloc = [a for a in asset_alloc if a['market'] == market_filter]
-
-    return jsonify({
-        "hhi": {
-            "score": 0.218,
-            "evaluation": "안정적 분산 (Safe Diversification)",
-            "desc": "해외 자산(78%) 및 국내 자산(22%)이 균형 있게 배분됨."
-        },
-        "etf_overlap": [
-            {
-                "holding_etf": "QQQ (Invesco QQQ Trust)",
-                "market": "international",
-                "overlapping_single_stock": "NVDA, AAPL, MSFT",
-                "effective_nvda_weight": "개별주 28% + QQQ 경유 2.1% = 실질 노출 30.1%",
-                "effective_aapl_weight": "개별주 18% + QQQ 경유 2.2% = 실질 노출 20.2%",
-                "alert": "해외 기술주 비중이 높아 나스닥 지수 변동성에 민감함."
-            }
-        ],
-        "asset_allocation": asset_alloc
-    })
+# -------------------------------------------------------------------------
+# DECODER & REVERSE DCF APIS
+# -------------------------------------------------------------------------
 
 @app.route('/api/stock/decoder/<ticker>', methods=['GET'])
 def get_stock_decoder(ticker):

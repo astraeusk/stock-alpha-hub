@@ -825,29 +825,29 @@ body.dark-theme {
     pointer-events: auto;
 }
 
-.modal-card {
-    background: var(--bg-base);
-    border: var(--border-glass);
-    border-radius: var(--radius-lg);
-    width: 90%;
-    max-width: 460px;
-    padding: 1.5rem;
-    box-shadow: var(--shadow-glass);
+.modal-card.modal-lg {
+    max-width: 680px;
 }
 
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.close-btn {
-    background: transparent;
-    border: none;
-    color: var(--color-subtext0);
-    font-size: 1.4rem;
+.btn-danger {
+    background: rgba(243, 139, 168, 0.2);
+    border: 1px solid var(--color-red);
+    color: var(--color-red);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+    background: var(--color-red);
+    color: #fff;
+}
+
+.btn-xs {
+    padding: 3px 6px;
+    font-size: 0.75rem;
 }
 
 /* Utility Colors */
@@ -860,3 +860,4 @@ body.dark-theme {
 .text-green { color: var(--color-green) !important; }
 .text-red { color: var(--color-red) !important; }
 .hidden { display: none !important; }
+

@@ -38,21 +38,24 @@
                 <div class="logo-icon"><i class="fa-solid fa-cube"></i></div>
                 <div class="brand-text">
                     <h1>AlphaHub</h1>
-                    <span class="version-badge">v2.5 Dual Market</span>
+                    <span class="version-badge">v3.0 Secure Hub</span>
                 </div>
             </div>
 
             <!-- Whitelist Security Status -->
             <div class="user-status-card">
                 <div class="status-header">
-                    <span class="status-dot online"></span>
-                    <span class="status-title">10인 전용 보안 세션</span>
+                    <span class="status-dot online" id="userStatusDot"></span>
+                    <span class="status-title" id="userStatusTitle">10인 전용 보안 세션</span>
                 </div>
                 <div class="user-info-box">
                     <p class="u-name" id="userNameDisplay">우성교 (Master)</p>
-                    <p class="u-access"><i class="fa-solid fa-user-shield"></i> 화이트리스트 계정 세션</p>
+                    <p class="u-access" id="userRoleDisplay"><i class="fa-solid fa-user-shield"></i> 관리자 (Master)</p>
                 </div>
-                <button class="btn-logout" id="btnLoginModal"><i class="fa-solid fa-key"></i> 계정 변경/로그인</button>
+                <div class="btn-group mt-2">
+                    <button class="btn-logout" id="btnLoginModal"><i class="fa-solid fa-right-to-bracket"></i> 로그인</button>
+                    <button class="btn-primary btn-sm" id="btnOpenUserMgmt" style="display:none;"><i class="fa-solid fa-users-gear"></i> 계정 관리</button>
+                </div>
             </div>
 
             <!-- Global Market Filter Toggle -->
@@ -119,84 +122,65 @@
                     <div class="market-pill-badge" id="currentMarketPill">
                         <span class="m-dot"></span> <span id="marketPillText">전체 (국내 & 해외)</span>
                     </div>
-                    <button class="btn-primary" id="btnRefreshBriefing">
-                        <i class="fa-solid fa-arrows-rotate"></i> 갱신
-                    </button>
-                    <button class="btn-secondary" id="btnOpenAddWatchlistModal">
-                        <i class="fa-solid fa-plus text-yellow"></i> 관심 종목 추가
-                    </button>
                 </div>
             </header>
 
-            <!-- TAB 1: 1층 일일 브리핑 -->
+            <!-- TAB 1: 매일 일일 브리핑 -->
             <section class="tab-pane active" id="tab-layer1">
-                <!-- Macro Metric Grid -->
-                <div class="card-grid col-4 mb-4">
-                    <div class="metric-card">
-                        <span class="m-label"><i class="fa-solid fa-money-bill-transfer"></i> 환율 (USD/KRW)</span>
-                        <div class="m-val-group">
-                            <span class="m-value">1,384.50 원</span>
-                            <span class="badge up">+4.20</span>
+                <div class="card-grid col-3 mb-4">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-wallet text-mauve"></i></div>
+                        <div class="stat-info">
+                            <span class="label">총 자산 평가액</span>
+                            <h3 id="statTotalVal">0 원</h3>
+                            <span class="trend up" id="statPnlRatio"><i class="fa-solid fa-caret-up"></i> +0.00%</span>
                         </div>
-                        <p class="m-desc">수출주 수혜 / 원자재 수입 부담 구간</p>
                     </div>
-
-                    <div class="metric-card">
-                        <span class="m-label"><i class="fa-solid fa-flag-usa"></i> 🇺🇸 해외 증시 (S&P/NASDAQ)</span>
-                        <div class="m-val-group">
-                            <span class="m-value">17,150.80</span>
-                            <span class="badge up">+0.82%</span>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-money-bill-trend-up text-teal"></i></div>
+                        <div class="stat-info">
+                            <span class="label">해외 vs 국내 비중</span>
+                            <h3 id="statAssetRatio">해외 0% / 국내 0%</h3>
+                            <span class="sub-desc" id="statHhiStatus">HHI 지수 측정중</span>
                         </div>
-                        <p class="m-desc">빅테크 AI 주도 상승세 지속</p>
                     </div>
-
-                    <div class="metric-card">
-                        <span class="m-label"><i class="fa-solid fa-won-sign"></i> 🇰🇷 국내 증시 (KOSPI)</span>
-                        <div class="m-val-group">
-                            <span class="m-value">2,680.40</span>
-                            <span class="badge down">-0.15%</span>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-earth-americas text-blue"></i></div>
+                        <div class="stat-info">
+                            <span class="label">오늘의 매크로 (환율)</span>
+                            <h3>USD/KRW 1,384.50</h3>
+                            <span class="trend up"><i class="fa-solid fa-caret-up"></i> +4.20 (+0.30%)</span>
                         </div>
-                        <p class="m-desc">기관 순매도 / 반도체 개별 장세</p>
-                    </div>
-
-                    <div class="metric-card">
-                        <span class="m-label"><i class="fa-solid fa-wallet"></i> 포트폴리오 자산 구성</span>
-                        <div class="m-val-group">
-                            <span class="m-value" id="briefTotalVal">4.52억 원</span>
-                        </div>
-                        <p class="m-desc">해외: <strong>78%</strong> | 국내: <strong>22%</strong></p>
                     </div>
                 </div>
 
-                <!-- Action Triggers Section -->
                 <div class="content-card mb-4">
                     <div class="card-header">
-                        <h3><i class="fa-solid fa-bolt text-yellow"></i> 오늘의 액션 신호 (Action Triggers)</h3>
-                        <span class="info-tag">1층 브리핑이 추천하는 2층 딥다이브 대상</span>
+                        <h3><i class="fa-solid fa-bolt text-yellow"></i> 오늘의 액션 트리거 신호 (1층 → 2층 딥다이브 연동)</h3>
+                        <button class="btn-secondary" id="btnRefreshBriefing"><i class="fa-solid fa-arrows-rotate"></i> 브리핑 갱신</button>
                     </div>
-                    <div class="trigger-list" id="triggerList">
-                        <!-- Dynamic Trigger Items -->
+                    <p class="text-sub">밤사이 주요 악재/호재 발생 종목을 감지하여 2층 스킬(기업 해독기/스토리/역DCF) 호출을 유도합니다.</p>
+                    <div class="card-grid col-2 mt-3" id="triggerList">
+                        <!-- Dynamic Action Triggers -->
                     </div>
                 </div>
 
-                <!-- KakaoTalk Live Feed & AI Extraction -->
                 <div class="content-card">
                     <div class="card-header">
-                        <h3><i class="fa-comment-dots text-yellow fab"></i> 카카오톡 입수 정보 & 종목 파싱 피드</h3>
-                        <button class="btn-sm btn-outline" id="btnOpenKakaoTab">수집기 상세보기</button>
+                        <h3><i class="fa-comment-dots fab text-mauve"></i> 카카오톡 실시간 서머리 피드</h3>
                     </div>
                     <div class="kakao-feed-container" id="kakaoFeedContainer">
-                        <!-- Dynamic Kakao Feed Cards -->
+                        <!-- Dynamic Kakao Messages -->
                     </div>
                 </div>
             </section>
 
-            <!-- TAB 1.2: 관심 종목 관리 (Watchlist) -->
+            <!-- TAB 1.5: 관심 종목 관리 -->
             <section class="tab-pane" id="tab-watchlist">
                 <div class="content-card mb-4">
                     <div class="card-header">
-                        <h3><i class="fa-solid fa-star text-yellow"></i> 관심 종목 관리 (Domestic & International Watchlist)</h3>
-                        <button class="btn-primary" id="btnOpenAddWatchlistModal2">
+                        <h3><i class="fa-solid fa-star text-yellow"></i> 국내 & 해외 관심 종목 (Watchlist)</h3>
+                        <button class="btn-primary" id="btnOpenAddWatchlistModal">
                             <i class="fa-solid fa-plus"></i> 새 관심 종목 등록
                         </button>
                     </div>
@@ -210,17 +194,49 @@
 
             <!-- TAB 1.5: 포트폴리오 콕핏 -->
             <section class="tab-pane" id="tab-layer15">
+                <div class="content-card mb-4">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-briefcase text-mauve"></i> 내 보유 자산 관리 (Real-Time Holdings)</h3>
+                        <button class="btn-primary" id="btnOpenAddAssetModal">
+                            <i class="fa-solid fa-plus"></i> [+ 내 보유 자산 등록]
+                        </button>
+                    </div>
+                    <p class="text-sub">실제 보유 중인 국내/해외 주식, ETF 자산을 추가/수정하여 콕핏 분석 지표를 실시간 업데이트합니다.</p>
+                    
+                    <div class="table-responsive mt-3">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>티커</th>
+                                    <th>종목명</th>
+                                    <th>구분</th>
+                                    <th>자산 유형</th>
+                                    <th>보유 수량</th>
+                                    <th>매수 평단가</th>
+                                    <th>현재가</th>
+                                    <th>평가금액 (원화)</th>
+                                    <th>손익률</th>
+                                    <th>관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="portfolioHoldingsTbody">
+                                <!-- Dynamic Assets Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="card-grid col-2 mb-4">
                     <div class="content-card">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-chart-pie text-mauve"></i> 국내/해외 자산 비중 & HHI 집중도 평가</h3>
+                            <h3><i class="fa-solid fa-chart-pie text-mauve"></i> 자산 비중 & HHI 집중도 평가</h3>
                         </div>
                         <div class="chart-container">
                             <canvas id="assetDoughnutChart"></canvas>
                         </div>
-                        <div class="hhi-box mt-3">
-                            <div class="hhi-score">HHI 지수: <strong>0.218</strong> (안정적 분산)</div>
-                            <p class="text-sub">해외 주식/지수(78%) 및 국내 주식(22%)이 균형 배분되어 0.25 위험 기준선을 하회함.</p>
+                        <div class="hhi-box mt-3" id="hhiScoreBox">
+                            <div class="hhi-score">HHI 지수: <strong id="hhiScoreVal">0.000</strong> (<span id="hhiEvalText">계산중</span>)</div>
+                            <p class="text-sub" id="hhiDescText">자산 데이터 렌더링 중...</p>
                         </div>
                     </div>
 
@@ -229,62 +245,8 @@
                             <h3><i class="fa-solid fa-layer-group text-teal"></i> ETF 경유 숨은 중복 노출 (Overlap)</h3>
                         </div>
                         <div class="overlap-list" id="etfOverlapList">
-                            <div class="overlap-card">
-                                <div class="ov-title"><i class="fa-solid fa-box-archive"></i> QQQ (Invesco QQQ Trust)</div>
-                                <p class="ov-detail">개별주 NVDA(28%) + QQQ 내 NVDA(2.1%) = <strong>실질 노출 30.1%</strong></p>
-                                <p class="ov-detail">개별주 AAPL(18%) + QQQ 내 AAPL(2.2%) = <strong>실질 노출 20.2%</strong></p>
-                                <div class="alert-pill warning"><i class="fa-solid fa-triangle-exclamation"></i> 경고: 해외 실질 기술주 비중이 75%를 초과하여 나스닥 지수 변동성에 민감함.</div>
-                            </div>
+                            <!-- Dynamic ETF Overlap -->
                         </div>
-                    </div>
-                </div>
-
-                <div class="content-card">
-                    <div class="card-header">
-                        <h3><i class="fa-solid fa-globe text-sapphire"></i> 자산 유형별 맞춤 평가 및 환율 민감도</h3>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>구분</th>
-                                    <th>자산 유형</th>
-                                    <th>비중</th>
-                                    <th>평가 잣대 및 접근법</th>
-                                    <th>상태</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><span class="badge normal">🇺🇸 해외</span></td>
-                                    <td><strong>미국 개별 기술주 (NVDA, AAPL)</strong></td>
-                                    <td>46%</td>
-                                    <td>10-K 사업구조 + 스토리 분석 + 역DCF 안전마진 쿼리</td>
-                                    <td><span class="badge success">정밀 점검중</span></td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge normal">🇺🇸 해외</span></td>
-                                    <td><strong>미국 지수 ETF (QQQ, SPY)</strong></td>
-                                    <td>32%</td>
-                                    <td>지수 총계 밸류에이션 및 상위 종목 중복도 점검</td>
-                                    <td><span class="badge normal">양호</span></td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge up">🇰🇷 국내</span></td>
-                                    <td><strong>국내 반도체 (SK하이닉스, 삼성전자)</strong></td>
-                                    <td>14%</td>
-                                    <td>HBM3e 수율, DRAM 분기 실적 및 환율 수혜 반영</td>
-                                    <td><span class="badge success">모니터링</span></td>
-                                </tr>
-                                <tr>
-                                    <td><span class="badge normal">🇺🇸 해외</span></td>
-                                    <td><strong>금 ETF (GLD)</strong></td>
-                                    <td>8%</td>
-                                    <td>펀더멘털 없음 (미국 실질금리 & 달러 인덱스 연동)</td>
-                                    <td><span class="badge normal">안전 자산</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </section>
@@ -413,7 +375,7 @@
         </main>
     </div>
 
-    <!-- Add Watchlist Modal -->
+    <!-- MODAL 1: Add Watchlist Modal -->
     <div class="modal-overlay" id="addWatchlistModal">
         <div class="modal-card">
             <div class="modal-header">
@@ -453,7 +415,7 @@
         </div>
     </div>
 
-    <!-- Login Modal -->
+    <!-- MODAL 2: Login Modal -->
     <div class="modal-overlay" id="loginModal">
         <div class="modal-card">
             <div class="modal-header">
@@ -461,7 +423,7 @@
                 <button class="close-btn" id="btnCloseLoginModal">&times;</button>
             </div>
             <div class="modal-body">
-                <p class="text-sub mb-3">본 시스템은 등록된 10명의 개인 투자자 전용으로 제한됩니다.</p>
+                <p class="text-sub mb-3">본 시스템은 허가된 사용자 전용으로 보안 로그인 후 이용 가능합니다.</p>
                 <div class="form-group mb-3">
                     <label>이메일 계정</label>
                     <input type="email" id="loginEmail" value="admin@alpha.com">
@@ -470,7 +432,112 @@
                     <label>비밀번호</label>
                     <input type="password" id="loginPass" value="alpha123">
                 </div>
-                <button class="btn-primary btn-full mt-3" id="btnSubmitLogin">로그인 세션 생성</button>
+                <button class="btn-primary btn-full mt-3" id="btnSubmitLogin">보안 로그인 세션 접속</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: User Whitelist Management Modal (Admin Only) -->
+    <div class="modal-overlay" id="userMgmtModal">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-users-gear text-teal"></i> 허가 사용자(화이트리스트) 계정 관리</h3>
+                <button class="close-btn" id="btnCloseUserMgmtModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="text-sub mb-3">사이트 접근 허가 계정(아이디/비밀번호)을 추가하거나 관리할 수 있습니다.</p>
+                
+                <div class="content-card mb-4" style="background: rgba(255,255,255,0.03);">
+                    <h4><i class="fa-solid fa-user-plus text-yellow"></i> 새 허가 계정 추가</h4>
+                    <div class="dcf-form-grid mt-2">
+                        <div class="form-group">
+                            <label>이메일 (아이디)</label>
+                            <input type="email" id="newUserEmail" placeholder="user@alpha.com">
+                        </div>
+                        <div class="form-group">
+                            <label>비밀번호</label>
+                            <input type="password" id="newUserPass" placeholder="패스워드 입력">
+                        </div>
+                        <div class="form-group">
+                            <label>이름 / 닉네임</label>
+                            <input type="text" id="newUserName" placeholder="예: 우성교">
+                        </div>
+                        <div class="form-group">
+                            <label>권한 구분</label>
+                            <select id="newUserRole" class="form-select">
+                                <option value="member">일반 회원 (Member)</option>
+                                <option value="admin">최고 관리자 (Admin)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn-primary mt-3 btn-full" id="btnSubmitAddUser">새 허가 계정 등록</button>
+                </div>
+
+                <h4><i class="fa-solid fa-list-check text-mauve"></i> 현재 허가된 계정 목록</h4>
+                <div class="table-responsive mt-2">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>이메일 (ID)</th>
+                                <th>이름</th>
+                                <th>권한</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userMgmtTbody">
+                            <!-- Dynamic User Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: Asset Add / Edit Modal -->
+    <div class="modal-overlay" id="assetModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-coins text-yellow"></i> <span id="assetModalTitle">보유 자산 등록</span></h3>
+                <button class="close-btn" id="btnCloseAssetModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="assetEditId" value="">
+                <div class="form-group mb-3">
+                    <label>시장 구분</label>
+                    <select id="assetMarket" class="form-select">
+                        <option value="international">🇺🇸 해외 주식 / ETF</option>
+                        <option value="domestic">🇰🇷 국내 주식 / ETF</option>
+                    </select>
+                </div>
+                <div class="form-group mb-3">
+                    <label>종목 티커 (Symbol)</label>
+                    <input type="text" id="assetTicker" placeholder="예: NVDA, AAPL, 000660">
+                </div>
+                <div class="form-group mb-3">
+                    <label>종목명 / 자산명</label>
+                    <input type="text" id="assetName" placeholder="예: 엔비디아, SK하이닉스">
+                </div>
+                <div class="form-group mb-3">
+                    <label>자산 유형</label>
+                    <select id="assetType" class="form-select">
+                        <option value="개별주">개별주 (주식)</option>
+                        <option value="지수 ETF">지수 ETF</option>
+                        <option value="원자재/기타">원자재 / 현금 / 기타</option>
+                    </select>
+                </div>
+                <div class="form-group mb-3">
+                    <label>보유 수량</label>
+                    <input type="number" id="assetQuantity" placeholder="예: 50" step="0.01">
+                </div>
+                <div class="form-group mb-3">
+                    <label>매수 평단가 (달러/원화)</label>
+                    <input type="number" id="assetBuyPrice" placeholder="예: 110.0 또는 155000" step="0.1">
+                </div>
+                <div class="form-group mb-3">
+                    <label>현재가 (달러/원화)</label>
+                    <input type="number" id="assetCurrentPrice" placeholder="예: 128.5 또는 178500" step="0.1">
+                </div>
+                <button class="btn-primary btn-full mt-3" id="btnSubmitAsset">자산 저장 및 콕핏 갱신</button>
             </div>
         </div>
     </div>
