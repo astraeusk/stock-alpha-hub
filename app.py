@@ -17,17 +17,16 @@ DB_FILE = os.path.join(os.path.dirname(__file__), 'stock_alpha.db')
 
 def init_db():
     try:
-        conn = sqlite3.connect(DB_FILE)
-        c = conn.cursor()
-        c.execute('''
-            CREATE TABLE IF NOT EXISTS kv_store (
-                key TEXT PRIMARY KEY,
-                val_json TEXT,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        conn.commit()
-        conn.close()
+        with sqlite3.connect(DB_FILE) as conn:
+            c = conn.cursor()
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS kv_store (
+                    key TEXT PRIMARY KEY,
+                    val_json TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            conn.commit()
     except Exception as e:
         print("DB Init Error:", e)
 
@@ -65,12 +64,11 @@ def sync_remote_db_on_boot():
             rows = json.loads(res.read())
             if rows and len(rows) > 0 and rows[0].get('val_json'):
                 data = json.loads(rows[0]['val_json'])
-                conn = sqlite3.connect(DB_FILE)
-                c = conn.cursor()
-                c.execute('INSERT OR REPLACE INTO kv_store (key, val_json, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
-                          ('data_store', json.dumps(data, ensure_ascii=False)))
-                conn.commit()
-                conn.close()
+                with sqlite3.connect(DB_FILE) as conn:
+                    c = conn.cursor()
+                    c.execute('INSERT OR REPLACE INTO kv_store (key, val_json, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+                              ('data_store', json.dumps(data, ensure_ascii=False)))
+                    conn.commit()
                 with open(DATA_STORE_PATH, 'w', encoding='utf-8') as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
                 print("★ Permanent Cloud DB auto-synced on server startup!")
@@ -85,13 +83,12 @@ sync_remote_db_on_boot()
 def load_data_store():
     # 1. Load from SQLite Permanent Database
     try:
-        conn = sqlite3.connect(DB_FILE)
-        c = conn.cursor()
-        c.execute('SELECT val_json FROM kv_store WHERE key=?', ('data_store',))
-        row = c.fetchone()
-        conn.close()
-        if row and row[0]:
-            return json.loads(row[0])
+        with sqlite3.connect(DB_FILE) as conn:
+            c = conn.cursor()
+            c.execute('SELECT val_json FROM kv_store WHERE key=?', ('data_store',))
+            row = c.fetchone()
+            if row and row[0]:
+                return json.loads(row[0])
     except Exception as e:
         print("SQLite Load Error:", e)
 
@@ -116,12 +113,11 @@ def load_data_store():
 def save_data_store(data):
     # 1. Save to SQLite Permanent Database
     try:
-        conn = sqlite3.connect(DB_FILE)
-        c = conn.cursor()
-        c.execute('INSERT OR REPLACE INTO kv_store (key, val_json, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
-                  ('data_store', json.dumps(data, ensure_ascii=False)))
-        conn.commit()
-        conn.close()
+        with sqlite3.connect(DB_FILE) as conn:
+            c = conn.cursor()
+            c.execute('INSERT OR REPLACE INTO kv_store (key, val_json, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+                      ('data_store', json.dumps(data, ensure_ascii=False)))
+            conn.commit()
     except Exception as e:
         print("SQLite Save Error:", e)
 
@@ -439,7 +435,8 @@ def add_whitelisted_user():
     data_store['whitelist_users'] = users
     save_data_store(data_store)
     
-    return jsonify({"success": True, "message": f"[{name} ({email})] 허가 계정이 등록되었습니다.", "users": get_whitelisted_users().json})
+    users_list = [{"email": k, "name": v['name'], "role": v['role']} for k, v in users.items()]
+    return jsonify({"success": True, "message": f"[{name} ({email})] 허가 계정이 등록되었습니다.", "users": users_list})
 
 @app.route('/api/auth/users/<path:email>', methods=['DELETE'])
 def delete_whitelisted_user(email):
