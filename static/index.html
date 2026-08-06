@@ -543,9 +543,10 @@
                         <option value="international">🇺🇸 해외 주식 / ETF (미국 & 글로벌)</option>
                     </select>
                 </div>
-                <div class="form-group mb-3">
-                    <label>종목 티커 (Symbol 또는 6자리 코드)</label>
-                    <input type="text" id="assetTicker" placeholder="예: 005930(삼성전자), 000660(SK하이닉스), 035420(NAVER), NVDA">
+                <div class="form-group mb-3 autocomplete-wrapper">
+                    <label>종목 검색 및 자동완성 (티커 또는 종목명 입력)</label>
+                    <input type="text" id="assetTicker" placeholder="검색할 종목명/티커 입력 (예: 삼성, SK, 테슬라, NVDA, AAPL)" autocomplete="off">
+                    <div class="autocomplete-dropdown" id="tickerAutoCompleteList"></div>
                 </div>
                 <div class="form-group mb-3">
                     <label>종목명 / 자산명</label>
@@ -629,6 +630,29 @@
                     💡 무료 Supabase 프로젝트를 생성하고 URL과 Key를 입력하시면 데이터가 클라우드로 실시간 자동 동기화됩니다.
                 </div>
                 <button class="btn-primary btn-full" id="btnSaveDbKey">영구 클라우드 DB 연결 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 7: Detailed System Error Alert Modal -->
+    <div class="modal-overlay" id="detailedErrorModal" style="z-index: 10000;">
+        <div class="modal-card" style="border-color: var(--color-red); max-width: 480px;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(243, 139, 168, 0.2);">
+                <h3 class="text-red"><i class="fa-solid fa-triangle-exclamation"></i> <span id="errModalTitle">시스템 작업 오류 발생</span></h3>
+                <button class="close-btn" id="btnCloseErrModal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="padding-top: 1rem;">
+                <div class="alert-pill danger mb-3" id="errModalHeaderBadge">
+                    <i class="fa-solid fa-bug"></i> <span id="errModalCode">ERR_OPERATION_FAILED</span>
+                </div>
+                <h4 style="color:var(--color-text); margin-bottom: 0.5rem;" id="errModalSummary">오류 요약 설명</h4>
+                <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; color: var(--color-subtext1); margin-bottom: 1rem; word-break: break-all; max-height: 140px; overflow-y: auto;" id="errModalDetail">
+                    자세한 기술적 오류 원인 내용...
+                </div>
+                <div style="font-size:0.82rem; color:var(--color-mauve); margin-bottom:1.2rem; line-height:1.4;" id="errModalRemedy">
+                    💡 <strong>권장 조치사항:</strong> 인터넷 연결을 확인하신 후 5초 후 다시 시도해 주세요.
+                </div>
+                <button class="btn-primary btn-full" id="btnConfirmErrModal">확인 및 닫기</button>
             </div>
         </div>
     </div>

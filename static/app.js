@@ -893,7 +893,14 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const contentType = res.headers.get('content-type') || '';
             if (!contentType.includes('application/json')) {
-                throw new Error('서버가 현재 갱신 준비 중이거나 부팅(Cold Start) 중입니다. 5~10초 후 다시 [저장]을 눌러주세요.');
+                showDetailedAlert(
+                    '자산 저장 일시 지연',
+                    'ERR_SERVER_COLD_START',
+                    '서버가 현재 배포 갱신 중이거나 초기 시동(Cold Start) 모드입니다.',
+                    `HTTP Status Code: ${res.status}\nContent-Type: ${contentType}`,
+                    'Render 클라우드 서버가 약 5~10초 후 깨어나므로 닫기 후 다시 [자산 저장] 버튼을 누르시면 정상 처리됩니다.'
+                );
+                return;
             }
             const data = await res.json();
             if (data.success) {
@@ -902,12 +909,105 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadPortfolioCockpit();
                 loadDailyBriefing();
             } else {
-                alert(data.message);
+                showDetailedAlert('자산 저장 실패', data.code || 'ERR_INVALID_INPUT', data.message, data.detail || '입력하신 데이터 규격을 확인해 주세요.', '필수 입력 항목(티커, 종목명, 수량, 매수단가)을 확인하세요.');
             }
         } catch (err) {
-            alert('자산 저장 실패: ' + err.message);
+            showDetailedAlert('네트워크/자산 저장 오류', 'ERR_NETWORK_DISCONNECTED', '자산 데이터를 서버로 전송하는 중 오류가 발생했습니다.', err.message, '인터넷 연결 상태를 점검하신 후 다시 시도해 주세요.');
         }
     });
+
+    // Detailed Error Alert Helper
+    function showDetailedAlert(title, code, summary, detail, remedy) {
+        const modal = document.getElementById('detailedErrorModal');
+        if (!modal) {
+            alert(`[${code}] ${title}\n\n${summary}\n\n상세: ${detail}\n\n권장조치: ${remedy}`);
+            return;
+        }
+        document.getElementById('errModalTitle').innerText = title || '시스템 작업 오류 발생';
+        document.getElementById('errModalCode').innerText = code || 'ERR_OPERATION_FAILED';
+        document.getElementById('errModalSummary').innerText = summary || '요청 처리 중 예외가 발생했습니다.';
+        document.getElementById('errModalDetail').innerText = detail || '상세 로그가 없습니다.';
+        document.getElementById('errModalRemedy').innerHTML = remedy ? `💡 <strong>권장 조치사항:</strong> ${remedy}` : '';
+        modal.classList.add('active');
+    }
+
+    const btnCloseErrModal = document.getElementById('btnCloseErrModal');
+    const btnConfirmErrModal = document.getElementById('btnConfirmErrModal');
+    const detailedErrorModal = document.getElementById('detailedErrorModal');
+    if (btnCloseErrModal && detailedErrorModal) {
+        btnCloseErrModal.addEventListener('click', () => detailedErrorModal.classList.remove('active'));
+    }
+    if (btnConfirmErrModal && detailedErrorModal) {
+        btnConfirmErrModal.addEventListener('click', () => detailedErrorModal.classList.remove('active'));
+    }
+
+    // Stock Search Ticker Auto-Complete Logic
+    const assetTickerInput = document.getElementById('assetTicker');
+    const autoContainer = document.getElementById('tickerAutoCompleteList');
+    let searchDebounceTimer = null;
+
+    if (assetTickerInput && autoContainer) {
+        assetTickerInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+
+            if (!query) {
+                autoContainer.classList.remove('active');
+                autoContainer.innerHTML = '';
+                return;
+            }
+
+            searchDebounceTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/stock/search?q=${encodeURIComponent(query)}`);
+                    const results = await res.json();
+
+                    if (!results || results.length === 0) {
+                        autoContainer.classList.remove('active');
+                        autoContainer.innerHTML = '';
+                        return;
+                    }
+
+                    autoContainer.innerHTML = results.map(item => `
+                        <div class="autocomplete-item" data-stock='${JSON.stringify(item).replace(/'/g, "&apos;")}'>
+                            <div class="item-left">
+                                <span class="item-ticker">$${item.ticker}</span>
+                                <span class="item-name">${item.name}</span>
+                            </div>
+                            <div class="item-right">
+                                <span class="badge ${item.market === 'domestic' ? 'up' : 'normal'}">${item.market === 'domestic' ? '🇰🇷 국내' : '🇺🇸 해외'}</span>
+                                <div style="font-size:0.75rem; color:var(--color-subtext0); margin-top:2px;">${item.currency === 'USD' ? '$' : ''}${item.price.toLocaleString()}${item.currency === 'KRW' ? '원' : ''}</div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    autoContainer.classList.add('active');
+
+                    document.querySelectorAll('.autocomplete-item').forEach(el => {
+                        el.addEventListener('click', () => {
+                            const stock = JSON.parse(el.getAttribute('data-stock'));
+                            document.getElementById('assetTicker').value = stock.ticker;
+                            document.getElementById('assetName').value = stock.name;
+                            document.getElementById('assetMarket').value = stock.market;
+                            document.getElementById('assetType').value = stock.asset_type;
+                            document.getElementById('assetBuyCurrency').value = stock.currency;
+                            document.getElementById('assetCurrentPrice').value = stock.price;
+
+                            autoContainer.classList.remove('active');
+                        });
+                    });
+                } catch (err) {
+                    console.error('Autocomplete error:', err);
+                }
+            }, 250);
+        });
+
+        document.addEventListener('click', (evt) => {
+            if (!autoContainer.contains(evt.target) && evt.target !== assetTickerInput) {
+                autoContainer.classList.remove('active');
+            }
+        });
+    }
 
     // ----------------------------------------------------------------------
     // Gemini AI Analysis Runner & Key Modal Logic
