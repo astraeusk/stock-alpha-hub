@@ -215,46 +215,46 @@ def get_live_market_symbol(symbol):
 
 KOREAN_STOCKS_DB = [
     {"ticker": "005930", "name": "삼성전자", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 74500},
-    {"ticker": "005935", "name": "삼성전자우", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 63000},
+    {"ticker": "001820", "name": "삼화콘덴서", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 38500},
+    {"ticker": "222800", "name": "심텍", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 24500},
+    {"ticker": "080220", "name": "제주반도체", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 13500},
+    {"ticker": "067310", "name": "하나마이크론", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 14200},
+    {"ticker": "077360", "name": "덕산하이메탈", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 7200},
+    {"ticker": "353200", "name": "대덕전자", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 22100},
+    {"ticker": "204320", "name": "HL만도", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 38000},
     {"ticker": "000660", "name": "SK하이닉스", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 178000},
     {"ticker": "035420", "name": "NAVER (네이버)", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 165000},
     {"ticker": "035720", "name": "카카오", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 41500},
-    {"ticker": "373220", "name": "LG에너지솔루션", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 335000},
-    {"ticker": "207940", "name": "삼성바이오로직스", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 950000},
-    {"ticker": "005380", "name": "현대차", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 245000},
-    {"ticker": "000270", "name": "기아", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 103000},
-    {"ticker": "006400", "name": "삼성SDI", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 320000},
-    {"ticker": "051910", "name": "LG화학", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 310000},
-    {"ticker": "247540", "name": "에코프로비엠", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 175000},
-    {"ticker": "086520", "name": "에코프로", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 88000},
-    {"ticker": "041510", "name": "SM엔터테인먼트", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 72000},
-    {"ticker": "068270", "name": "셀트리온", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 198000},
-    {"ticker": "005930", "name": "덕산하이메탈", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 7200},
-    {"ticker": "036830", "name": "솔브레인", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 280000},
-    {"ticker": "005490", "name": "POSCO홀딩스", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 360000},
-    {"ticker": "066570", "name": "LG전자", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 98000},
-    {"ticker": "022100", "name": "포스코DX", "market": "domestic", "currency": "KRW", "asset_type": "국내 개별주", "price": 28500},
-    {"ticker": "069500", "name": "KODEX 200", "market": "domestic", "currency": "KRW", "asset_type": "국내 ETF", "price": 36500},
-    {"ticker": "102110", "name": "TIGER 200", "market": "domestic", "currency": "KRW", "asset_type": "국내 ETF", "price": 36550},
-    {"ticker": "305080", "name": "TIGER 2차전지테마", "market": "domestic", "currency": "KRW", "asset_type": "국내 ETF", "price": 18500},
-    {"ticker": "466920", "name": "SOL 미국S&P500", "market": "domestic", "currency": "KRW", "asset_type": "국내 ETF", "price": 12800},
-    {"ticker": "381180", "name": "TIGER 미국배당다우존스", "market": "domestic", "currency": "KRW", "asset_type": "국내 ETF", "price": 11500},
-    {"ticker": "133690", "name": "TIGER 미국나스닥100", "market": "domestic", "currency": "KRW", "asset_type": "국내 ETF", "price": 105000},
     {"ticker": "NVDA", "name": "엔비디아 (NVIDIA)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 128.50},
     {"ticker": "AAPL", "name": "애플 (Apple)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 218.20},
-    {"ticker": "TSLA", "name": "테슬라 (Tesla)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 210.50},
-    {"ticker": "MSFT", "name": "마이크로소프트 (Microsoft)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 440.00},
-    {"ticker": "GOOGL", "name": "알파벳/구글 (Alphabet)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 175.00},
-    {"ticker": "AMZN", "name": "아마존 (Amazon)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 180.00},
-    {"ticker": "META", "name": "메타 (Meta)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 490.00},
-    {"ticker": "AMD", "name": "AMD", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 140.00},
-    {"ticker": "INTC", "name": "인텔 (Intel)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 20.50},
-    {"ticker": "QQQ", "name": "Invesco QQQ Trust (나스닥 100)", "market": "international", "currency": "USD", "asset_type": "해외 ETF", "price": 480.00},
-    {"ticker": "SPY", "name": "SPDR S&P 500 ETF Trust", "market": "international", "currency": "USD", "asset_type": "해외 ETF", "price": 550.00},
-    {"ticker": "SCHD", "name": "Schwab U.S. Dividend Equity ETF", "market": "international", "currency": "USD", "asset_type": "해외 ETF", "price": 82.00},
-    {"ticker": "SOXX", "name": "iShares Semiconductor ETF", "market": "international", "currency": "USD", "asset_type": "해외 ETF", "price": 220.00},
-    {"ticker": "TQQQ", "name": "ProShares UltraPro QQQ 3X", "market": "international", "currency": "USD", "asset_type": "해외 ETF", "price": 72.00}
+    {"ticker": "TSLA", "name": "테슬라 (Tesla)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 210.50}
 ]
+
+KRX_MASTER_PATH = os.path.join(BASE_DIR, 'krx_stocks_master.json')
+if os.path.exists(KRX_MASTER_PATH):
+    try:
+        with open(KRX_MASTER_PATH, 'r', encoding='utf-8') as f:
+            krx_items = json.load(f)
+            us_items = [
+                {"ticker": "NVDA", "name": "엔비디아 (NVIDIA)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 128.50},
+                {"ticker": "AAPL", "name": "애플 (Apple)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 218.20},
+                {"ticker": "TSLA", "name": "테슬라 (Tesla)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 210.50},
+                {"ticker": "MSFT", "name": "마이크로소프트 (Microsoft)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 440.00},
+                {"ticker": "GOOGL", "name": "알파벳/구글 (Alphabet)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 175.00},
+                {"ticker": "AMZN", "name": "아마존 (Amazon)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 180.00},
+                {"ticker": "META", "name": "메타 (Meta)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 490.00},
+                {"ticker": "AMD", "name": "AMD", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 140.00},
+                {"ticker": "INTC", "name": "인텔 (Intel)", "market": "international", "currency": "USD", "asset_type": "해외 개별주", "price": 20.50},
+                {"ticker": "QQQ", "name": "Invesco QQQ Trust (나스닥 100)", "market": "international", "currency": "USD", "asset_type": "해외 ETF", "price": 480.00},
+                {"ticker": "SPY", "name": "SPDR S&P 500 ETF Trust", "market": "international", "currency": "USD", "asset_type": "해외 ETF", "price": 550.00},
+                {"ticker": "SCHD", "name": "Schwab U.S. Dividend Equity ETF", "market": "international", "currency": "USD", "asset_type": "해외 ETF", "price": 82.00},
+                {"ticker": "SOXX", "name": "iShares Semiconductor ETF", "market": "international", "currency": "USD", "asset_type": "해외 ETF", "price": 220.00},
+                {"ticker": "TQQQ", "name": "ProShares UltraPro QQQ 3X", "market": "international", "currency": "USD", "asset_type": "해외 ETF", "price": 72.00}
+            ]
+            KOREAN_STOCKS_DB = us_items + krx_items
+            print(f"★ Loaded {len(krx_items)} KRX stocks into Master Search Engine!")
+    except Exception as e:
+        print("KRX Master load error:", e)
 
 @app.route('/api/stock/search', methods=['GET'])
 def search_stock_autocomplete():
@@ -266,18 +266,22 @@ def search_stock_autocomplete():
     q_upper = q.upper()
 
     results = []
-    # 1. Search local Korean & Major US Stock Dictionary
+
+    # 1. Direct Ticker or Korean Name Match
     for item in KOREAN_STOCKS_DB:
-        if q_lower in item['name'].lower() or q_upper in item['ticker']:
+        name_match = q_lower in item['name'].lower()
+        ticker_match = q_upper in item['ticker']
+        if name_match or ticker_match:
+            item_copy = item.copy()
             live = get_live_market_symbol(item['ticker'])
             if live and live.get('price', 0) > 0:
-                item['price'] = live['price']
-            results.append(item)
-            if len(results) >= 8:
+                item_copy['price'] = live['price']
+            results.append(item_copy)
+            if len(results) >= 10:
                 break
 
-    # 2. Query Yahoo Finance API if fewer than 5 results
-    if len(results) < 5 and (re.search(r'[A-Za-z]', q) or q.isdigit()):
+    # 2. Query Yahoo Finance API ONLY for ASCII/English or Ticker inputs (prevents 400 Bad Request on Hangeul)
+    if len(results) < 5 and (re.search(r'^[A-Za-z0-9\.\-\s]+$', q)):
         try:
             url = f"https://query2.finance.yahoo.com/v1/finance/search?q={urllib.parse.quote(q)}&quotesCount=6"
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -308,7 +312,7 @@ def search_stock_autocomplete():
                     "asset_type": asset_type,
                     "price": price
                 })
-                if len(results) >= 8:
+                if len(results) >= 10:
                     break
         except Exception as e:
             print("Yahoo autocomplete search error:", e)
