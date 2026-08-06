@@ -643,12 +643,61 @@
                 <button class="btn-primary btn-full mb-3" id="btnSaveDbKey">영구 클라우드 DB 연결 저장</button>
 
                 <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:1rem; margin-top:1rem;">
-                    <h4 style="font-size:0.88rem; color:#4285F4; margin-bottom:8px;"><i class="fa-brands fa-google-drive"></i> 구글 드라이브 (Google Drive) 실시간 개인 백업/복원</h4>
-                    <p style="font-size:0.78rem; color:var(--color-subtext0); margin-bottom:8px;">내 개인 구글 드라이브 계정에 `stock_alpha_hub_backup.json` 백업 파일을 안전하게 저장하거나 불러옵니다.</p>
-                    <div style="display:flex; gap:8px; margin-bottom:8px;">
-                        <button class="btn-primary btn-sm" id="btnGoogleDriveBackup" style="flex:1; background:linear-gradient(135deg, #4285F4, #34A853);"><i class="fa-brands fa-google-drive"></i> 내 구글 드라이브에 백업</button>
-                        <button class="btn-secondary btn-sm" id="btnGoogleDriveRestore" style="flex:1;"><i class="fa-solid fa-cloud-arrow-down"></i> 구글 드라이브에서 복원</button>
+                    <h4 style="font-size:0.88rem; color:#4285F4; margin-bottom:4px;">
+                        <i class="fa-brands fa-google-drive"></i> 👑 마스터 구글 드라이브 24시간 무인 중앙 백업
+                    </h4>
+                    <p style="font-size:0.78rem; color:var(--color-subtext0); margin-bottom:8px; line-height:1.4;">
+                        대표님이 접속하지 않아도 유저들이 데이터를 입력할 때마다 대표님 구글 드라이브로 실시간 자동 백업됩니다.<br>
+                        아래 가이드에 따라 Google Apps Script 웹 앱 URL을 1회 등록하면 <strong>영구적으로 자동 백업</strong>됩니다.
+                    </p>
+                    <div class="form-group mb-2">
+                        <label style="font-size:0.75rem;">Google Apps Script 웹 앱 URL</label>
+                        <input type="text" id="gdriveWebhookUrlInput" placeholder="https://script.google.com/macros/s/AKfyc.../exec">
                     </div>
+                    <div style="display:flex; gap:8px; margin-bottom:8px;">
+                        <button class="btn-primary btn-sm" id="btnSaveGdriveWebhook" style="flex:1; background:linear-gradient(135deg, #4285F4, #34A853);">
+                            <i class="fa-brands fa-google-drive"></i> 구글 드라이브 실시간 연동 저장
+                        </button>
+                        <button class="btn-outline btn-sm" id="btnTestGdriveWebhook" style="flex:1;">
+                            <i class="fa-solid fa-vial"></i> 연동 테스트
+                        </button>
+                    </div>
+                    <div id="gdriveStatusBadge" style="font-size:0.75rem; padding:4px 8px; border-radius:6px; display:inline-block; margin-bottom:6px;"></div>
+                    <details style="font-size:0.75rem; color:var(--color-subtext0); cursor:pointer; margin-top:4px;">
+                        <summary style="color:#4285F4; font-weight:600;">📋 Google Apps Script 설정 가이드 (1회, 3분)</summary>
+                        <ol style="padding-left:1.2rem; margin-top:6px; line-height:1.6;">
+                            <li><a href="https://script.google.com" target="_blank" style="color:var(--color-mauve); text-decoration:underline;">script.google.com</a> 접속 → [새 프로젝트] 클릭</li>
+                            <li>기존 코드 전체 삭제 후 아래 코드를 복사 붙여넣기:
+                                <pre style="background:rgba(0,0,0,0.4); padding:8px; border-radius:6px; margin:6px 0; overflow-x:auto; font-size:0.7rem; line-height:1.3;">function doPost(e) {
+  var data = JSON.parse(e.postData.contents);
+  var folder = DriveApp.getRootFolder();
+  var files = DriveApp.getFilesByName('stock_alpha_backup.json');
+  if (files.hasNext()) {
+    files.next().setContent(JSON.stringify(data.data, null, 2));
+  } else {
+    folder.createFile('stock_alpha_backup.json',
+      JSON.stringify(data.data, null, 2), 'application/json');
+  }
+  return ContentService.createTextOutput(
+    JSON.stringify({success:true, timestamp:data.timestamp})
+  ).setMimeType(ContentService.MimeType.JSON);
+}
+function doGet(e) {
+  var files = DriveApp.getFilesByName('stock_alpha_backup.json');
+  if (files.hasNext()) {
+    return ContentService.createTextOutput(
+      files.next().getBlob().getDataAsString()
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+  return ContentService.createTextOutput(
+    JSON.stringify({error:'no backup found'})
+  ).setMimeType(ContentService.MimeType.JSON);
+}</pre>
+                            </li>
+                            <li>[배포] → [새 배포] → 유형: <strong>웹 앱</strong> → 액세스: <strong>나만</strong> → [배포]</li>
+                            <li>생성된 <strong>웹 앱 URL</strong>을 위 입력창에 붙여넣고 [연동 저장] 클릭</li>
+                        </ol>
+                    </details>
                 </div>
 
                 <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:1rem; margin-top:1rem;">

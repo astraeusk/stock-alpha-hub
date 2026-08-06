@@ -167,51 +167,34 @@ def save_data_store(data):
         except Exception as e:
             print("Supabase cloud sync error:", e)
 
-    # 4. Master Google Drive Real-time Auto Backup
+    # 4. Master Google Drive Real-time Auto Backup (via Google Apps Script Webhook)
     sync_to_master_gdrive(data)
 
 def sync_to_master_gdrive(data):
-    client_id = os.environ.get('GDRIVE_CLIENT_ID', '').strip() or data.get('gdrive_client_id', '').strip()
-    client_secret = os.environ.get('GDRIVE_CLIENT_SECRET', '').strip() or data.get('gdrive_client_secret', '').strip()
-    refresh_token = os.environ.get('GDRIVE_REFRESH_TOKEN', '').strip() or data.get('gdrive_refresh_token', '').strip()
-    file_id = os.environ.get('GDRIVE_FILE_ID', '').strip() or data.get('gdrive_file_id', '').strip()
-    access_token = data.get('gdrive_master_token', '').strip()
+    """Google Apps Script 웹훅 URL로 전체 데이터를 POST하여 대표님 구글 드라이브에 24시간 무인 자동 백업.
+    Apps Script가 POST 데이터를 받아 구글 드라이브에 JSON 파일로 저장/갱신합니다.
+    토큰 만료 없이 영구적으로 작동합니다."""
+    webhook_url = os.environ.get('GDRIVE_WEBHOOK_URL', '').strip() or data.get('gdrive_webhook_url', '').strip()
+    if not webhook_url:
+        return
 
-    if not access_token and refresh_token and client_id and client_secret:
-        try:
-            token_url = "https://oauth2.googleapis.com/token"
-            req_data = urllib.parse.urlencode({
-                'client_id': client_id,
-                'client_secret': client_secret,
-                'refresh_token': refresh_token,
-                'grant_type': 'refresh_token'
-            }).encode('utf-8')
-            req = urllib.request.Request(token_url, data=req_data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
-            res = json.loads(urllib.request.urlopen(req, timeout=4).read())
-            access_token = res.get('access_token', '')
-        except Exception as e:
-            print("Master GDrive token refresh error:", e)
-
-    if access_token:
-        try:
-            payload = json.dumps(data, ensure_ascii=False).encode('utf-8')
-            if file_id:
-                upload_url = f"https://www.googleapis.com/upload/drive/v3/files/{file_id}?uploadType=media"
-                req_method = 'PATCH'
-            else:
-                upload_url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=media"
-                req_method = 'POST'
-            
-            req = urllib.request.Request(upload_url, data=payload, headers={
-                'Authorization': f'Bearer {access_token}',
-                'Content-Type': 'application/json'
-            }, method=req_method)
-            res = json.loads(urllib.request.urlopen(req, timeout=5).read())
-            if res.get('id') and not file_id:
-                data['gdrive_file_id'] = res['id']
-            print("★ Master Google Drive Auto-Sync Completed!")
-        except Exception as e:
-            print("Master GDrive sync upload error:", e)
+    try:
+        payload = json.dumps({
+            'action': 'backup',
+            'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            'data': data
+        }, ensure_ascii=False).encode('utf-8')
+        req = urllib.request.Request(webhook_url, data=payload, headers={
+            'Content-Type': 'application/json'
+        }, method='POST')
+        res = urllib.request.urlopen(req, timeout=8)
+        result = json.loads(res.read())
+        if result.get('success'):
+            print("★ Master Google Drive Auto-Sync via Apps Script Webhook Completed!")
+        else:
+            print("GDrive webhook response error:", result.get('error', 'unknown'))
+    except Exception as e:
+        print("Master GDrive webhook sync error:", e)
 
 # -------------------------------------------------------------------------
 # REAL-TIME MARKET DATA FETCHING (Live Forex & Yahoo Finance API)
@@ -1370,14 +1353,16 @@ def handle_master_gdrive_settings():
     data_store = load_data_store()
     if request.method == 'POST':
         req = request.json or {}
-        access_token = req.get('access_token', '').strip()
-        data_store['gdrive_master_token'] = access_token
+        webhook_url = req.get('webhook_url', '').strip()
+        data_store['gdrive_webhook_url'] = webhook_url
         save_data_store(data_store)
-        return jsonify({"success": True, "message": "마스터 관리자 구글 드라이브 전체 유저 중앙 백업 동기화가 활성화되었습니다!"})
+        status = "활성화" if webhook_url else "해제"
+        return jsonify({"success": True, "message": f"마스터 구글 드라이브 24시간 무인 실시간 백업이 {status}되었습니다!"})
 
+    saved_url = data_store.get('gdrive_webhook_url', '') or os.environ.get('GDRIVE_WEBHOOK_URL', '')
     return jsonify({
-        "has_token": bool(data_store.get('gdrive_master_token')),
-        "file_id": data_store.get('gdrive_file_id', '')
+        "active": bool(saved_url),
+        "webhook_url": saved_url[:40] + "..." if len(saved_url) > 40 else saved_url
     })
 
 @app.route('/api/settings/supabase', methods=['GET', 'POST'])

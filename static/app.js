@@ -1201,6 +1201,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('supabaseUrlInput').value = data.supabase_url;
                 }
             } catch (e) {}
+            if (typeof loadGdriveStatus === 'function') loadGdriveStatus();
             dbModal.classList.add('active');
         });
         btnCloseDbModal.addEventListener('click', () => dbModal.classList.remove('active'));
@@ -1279,117 +1280,77 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Google Drive Backup & Restore Logic
-        const btnGoogleDriveBackup = document.getElementById('btnGoogleDriveBackup');
-        const btnGoogleDriveRestore = document.getElementById('btnGoogleDriveRestore');
+        // Google Drive Apps Script Webhook Backup & Restore Logic
+        const btnSaveGdriveWebhook = document.getElementById('btnSaveGdriveWebhook');
+        const btnTestGdriveWebhook = document.getElementById('btnTestGdriveWebhook');
+        const gdriveStatusBadge = document.getElementById('gdriveStatusBadge');
 
-        let gdriveTokenClient = null;
-
-        function getGoogleAccessToken(callback) {
-            if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
-                alert('구글 서비스를 연동 중입니다. 3초 후 다시 시도해 주세요.');
-                return;
-            }
-            if (!gdriveTokenClient) {
-                gdriveTokenClient = google.accounts.oauth2.initTokenClient({
-                    client_id: '921102927236-dummyid.apps.googleusercontent.com',
-                    scope: 'https://www.googleapis.com/auth/drive.file',
-                    callback: (tokenResponse) => {
-                        if (tokenResponse.access_token) {
-                            callback(tokenResponse.access_token);
-                        } else {
-                            alert('구글 계정 권한 승인이 필요합니다.');
-                        }
-                    }
-                });
-            }
-            gdriveTokenClient.callback = (tokenResponse) => {
-                if (tokenResponse.access_token) {
-                    callback(tokenResponse.access_token);
+        // Load saved webhook status on modal open
+        async function loadGdriveStatus() {
+            try {
+                const res = await fetch('/api/settings/gdrive-master');
+                const data = await res.json();
+                if (data.active && data.webhook_url) {
+                    document.getElementById('gdriveWebhookUrlInput').placeholder = `연동 중: ${data.webhook_url}`;
+                    gdriveStatusBadge.innerHTML = '🟢 <strong>실시간 자동 백업 활성화</strong>';
+                    gdriveStatusBadge.style.background = 'rgba(52,168,83,0.15)';
+                    gdriveStatusBadge.style.color = '#34A853';
                 } else {
-                    alert('구글 계정 권한 승인이 필요합니다.');
+                    gdriveStatusBadge.innerHTML = '⚪ 미연동 (웹 앱 URL을 등록해 주세요)';
+                    gdriveStatusBadge.style.background = 'rgba(255,255,255,0.05)';
+                    gdriveStatusBadge.style.color = 'var(--color-subtext0)';
                 }
-            };
-            gdriveTokenClient.requestAccessToken({ prompt: 'consent' });
+            } catch(e) {}
         }
 
-        if (btnGoogleDriveBackup) {
-            btnGoogleDriveBackup.addEventListener('click', () => {
-                getGoogleAccessToken(async (accessToken) => {
-                    try {
-                        const exportRes = await fetch('/api/settings/export-backup');
-                        const exportData = await exportRes.json();
-                        if (!exportData.success) throw new Error('백업 데이터 추출 실패');
-
-                        const fileContent = JSON.stringify(exportData.data_store, null, 2);
-                        const fileMetadata = {
-                            name: 'stock_alpha_hub_backup.json',
-                            mimeType: 'application/json'
-                        };
-
-                        const form = new FormData();
-                        form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
-                        form.append('file', new Blob([fileContent], { type: 'application/json' }));
-
-                        const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${accessToken}` },
-                            body: form
-                        });
-                        const uploadData = await uploadRes.json();
-                        if (uploadData.id) {
-                            // Save master token and file ID to server for background auto-syncing!
-                            await fetch('/api/settings/gdrive-master', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ access_token: accessToken, file_id: uploadData.id })
-                            });
-                            alert('🎉 내 구글 드라이브 계정에 [stock_alpha_hub_backup.json] 중앙 통합 백업 파일이 생성되었으며, 마스터 실시간 자동 동기화 연동이 완료되었습니다!');
-                        } else {
-                            alert('구글 드라이브 업로드 실패: ' + (uploadData.error?.message || '알 수 없는 오류'));
-                        }
-                    } catch (err) {
-                        alert('구글 드라이브 백업 중 오류: ' + err.message);
-                    }
-                });
+        if (btnSaveGdriveWebhook) {
+            btnSaveGdriveWebhook.addEventListener('click', async () => {
+                const webhookUrl = document.getElementById('gdriveWebhookUrlInput').value.trim();
+                if (!webhookUrl) {
+                    alert('Google Apps Script 웹 앱 URL을 입력해 주세요.');
+                    return;
+                }
+                try {
+                    const res = await fetch('/api/settings/gdrive-master', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ webhook_url: webhookUrl })
+                    });
+                    const data = await res.json();
+                    alert(data.message);
+                    loadGdriveStatus();
+                } catch(err) {
+                    alert('저장 실패: ' + err.message);
+                }
             });
         }
 
-        if (btnGoogleDriveRestore) {
-            btnGoogleDriveRestore.addEventListener('click', () => {
-                getGoogleAccessToken(async (accessToken) => {
-                    try {
-                        const searchRes = await fetch("https://www.googleapis.com/drive/v3/files?q=name='stock_alpha_hub_backup.json' and trashed=false", {
-                            headers: { 'Authorization': `Bearer ${accessToken}` }
-                        });
-                        const searchData = await searchRes.json();
-                        if (!searchData.files || searchData.files.length === 0) {
-                            return alert('내 구글 드라이브에서 [stock_alpha_hub_backup.json] 백업 파일을 찾을 수 없습니다. 먼저 백업을 진행해 주세요.');
-                        }
-
-                        const fileId = searchData.files[0].id;
-                        const contentRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-                            headers: { 'Authorization': `Bearer ${accessToken}` }
-                        });
-                        const backupContent = await contentRes.json();
-
-                        const importRes = await fetch('/api/settings/import-backup', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ data_store: backupContent })
-                        });
-                        const importData = await importRes.json();
-                        alert(importData.message);
-                        if (importData.success) {
-                            dbModal.classList.remove('active');
-                            loadPortfolioCockpit();
-                            loadWatchlist();
-                            loadDailyBriefing();
-                        }
-                    } catch (err) {
-                        alert('구글 드라이브 복원 중 오류: ' + err.message);
-                    }
-                });
+        if (btnTestGdriveWebhook) {
+            btnTestGdriveWebhook.addEventListener('click', async () => {
+                const webhookUrl = document.getElementById('gdriveWebhookUrlInput').value.trim();
+                const statusBadge = document.getElementById('gdriveStatusBadge');
+                if (!webhookUrl) {
+                    alert('먼저 Google Apps Script 웹 앱 URL을 입력해 주세요.');
+                    return;
+                }
+                statusBadge.innerHTML = '🔄 테스트 중...';
+                statusBadge.style.background = 'rgba(66,133,244,0.15)';
+                statusBadge.style.color = '#4285F4';
+                try {
+                    const testRes = await fetch(webhookUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'test', timestamp: new Date().toISOString(), data: { test: true } }),
+                        mode: 'no-cors'
+                    });
+                    statusBadge.innerHTML = '🟢 <strong>테스트 전송 완료! 구글 드라이브를 확인해 주세요.</strong>';
+                    statusBadge.style.background = 'rgba(52,168,83,0.15)';
+                    statusBadge.style.color = '#34A853';
+                } catch(err) {
+                    statusBadge.innerHTML = '🔴 테스트 실패: ' + err.message;
+                    statusBadge.style.background = 'rgba(234,67,53,0.15)';
+                    statusBadge.style.color = '#EA4335';
+                }
             });
         }
     }
