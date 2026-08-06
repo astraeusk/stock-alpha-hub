@@ -220,11 +220,34 @@ def get_live_market_symbol(symbol):
     cache_key = f"sym_{symbol}"
     if cache_key in LIVE_CACHE and (now - LIVE_CACHE[cache_key]['ts'] < 60):
         return LIVE_CACHE[cache_key]['data']
+
+    # For domestic 6-digit tickers, try .KS (코스피) first then .KQ (코스닥)
+    if symbol.isdigit() and len(symbol) == 6:
+        for suffix in ['.KS', '.KQ']:
+            try:
+                yf_symbol = symbol + suffix
+                url = f"https://query1.finance.yahoo.com/v8/finance/chart/{yf_symbol}?interval=1d"
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                res = json.loads(urllib.request.urlopen(req, timeout=4).read())
+                meta = res['chart']['result'][0]['meta']
+                price = float(meta.get('regularMarketPrice', 0))
+                if price > 0:
+                    prev = float(meta.get('chartPreviousClose', price))
+                    chg_pct = ((price - prev) / prev * 100.0) if prev > 0 else 0.0
+                    data = {
+                        "price": round(price, 2),
+                        "prev_close": round(prev, 2),
+                        "change_pct": f"{'+' if chg_pct >= 0 else ''}{chg_pct:.2f}%"
+                    }
+                    LIVE_CACHE[cache_key] = {'ts': now, 'data': data}
+                    return data
+            except:
+                continue
+        return None
+
+    # For international tickers (AAPL, NVDA, etc.)
     try:
-        yf_symbol = symbol
-        if symbol.isdigit():
-            yf_symbol = f"{symbol}.KS"
-        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{yf_symbol}?interval=1d"
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d"
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         res = json.loads(urllib.request.urlopen(req, timeout=5).read())
         meta = res['chart']['result'][0]['meta']
@@ -296,18 +319,23 @@ def search_stock_autocomplete():
 
     results = []
 
-    # 1. Direct Ticker or Korean Name Match
+    # 1. Direct Ticker or Korean Name Match (fast local scan, no API)
     for item in KOREAN_STOCKS_DB:
         name_match = q_lower in item['name'].lower()
         ticker_match = q_upper in item['ticker']
         if name_match or ticker_match:
-            item_copy = item.copy()
-            live = get_live_market_symbol(item['ticker'])
-            if live and live.get('price', 0) > 0:
-                item_copy['price'] = live['price']
-            results.append(item_copy)
+            results.append(item.copy())
             if len(results) >= 10:
                 break
+
+    # Fetch live price ONLY for top 3 results (keeps search fast)
+    for i, r in enumerate(results[:3]):
+        try:
+            live = get_live_market_symbol(r['ticker'])
+            if live and live.get('price', 0) > 0:
+                results[i]['price'] = live['price']
+        except:
+            pass
 
     # 2. Query Yahoo Finance API ONLY for ASCII/English or Ticker inputs (prevents 400 Bad Request on Hangeul)
     if len(results) < 5 and (re.search(r'^[A-Za-z0-9\.\-\s]+$', q)):
