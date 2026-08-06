@@ -37,7 +37,9 @@ DEFAULT_DATA = {
     "whitelist_users": {
         "admin@alpha.com": {"name": "우성교 (Master)", "role": "admin", "pass": "alpha123"}
     },
-    "portfolio": []
+    "portfolio": [],
+    "watchlist": [],
+    "kakaotalk_messages": []
 }
 
 def sync_remote_db_on_boot():
@@ -197,12 +199,6 @@ def get_live_market_symbol(symbol):
     except Exception as e:
         print(f"Market symbol {symbol} fetch error:", e)
         return None
-
-# In-memory Watchlist (User inputs directly)
-WATCHLIST = []
-
-# KakaoTalk / LMS messages (User inputs directly)
-KAKAOTALK_MESSAGES = []
 
 STOCK_DECODER_DATA = {
     "NVDA": {
@@ -907,6 +903,9 @@ def calculate_reverse_dcf():
 
 @app.route('/api/kakaotalk/ingest', methods=['POST'])
 def ingest_kakaotalk():
+    data_store = load_data_store()
+    kakao_messages = data_store.get('kakaotalk_messages', [])
+    
     data = request.json or {}
     raw_text = data.get('text', '').strip()
     sender = data.get('sender', '카카오톡/LMS 수집기')
@@ -914,10 +913,8 @@ def ingest_kakaotalk():
     if not raw_text:
         return jsonify({"success": False, "message": "수집할 텍스트가 비어있습니다."}), 400
 
-    # 1. Ticker & Stock Name Extraction (English symbols, 6-digit codes, Korean stock names)
+    # 1. Ticker & Stock Name Extraction
     eng_num_tickers = re.findall(r'[A-Z]{2,5}|\b\d{6}\b', raw_text)
-    
-    # Common Korean stock name patterns (lines starting with *, or known stocks)
     kor_stock_pattern = r'\*([가-힣A-Za-z0-9]+)|([가-힣]{2,8}(?:하이메탈|반도체|마이크론|콘덴서|디에스|전자|써키트|컨텍솔|만도|바이오|메디칼|로보틱스|솔루션|케미칼))'
     extracted_kor = re.findall(kor_stock_pattern, raw_text)
     kor_names = []
@@ -925,7 +922,6 @@ def ingest_kakaotalk():
         if g1: kor_names.append(g1.strip())
         if g2: kor_names.append(g2.strip())
 
-    # Add specific highlighted stocks from text if mentioned
     known_list = ["덕산하이메탈", "심텍", "제주반도체", "하나마이크론", "삼화콘덴서", "해성디에스", "대덕전자", "네패스", "코리아써키트", "마이크로컨텍솔", "HL만도", "삼성전자", "SK하이닉스", "카카오", "NAVER"]
     for s in known_list:
         if s in raw_text and s not in kor_names:
@@ -955,11 +951,11 @@ def ingest_kakaotalk():
         action_text = f"{all_tickers[0]} 포함 {len(all_tickers)}개 관심 종목 2층 딥다이브 연동 추천"
 
     new_msg = {
-        "id": len(KAKAOTALK_MESSAGES) + 1,
+        "id": f"k_{int(time.time()*1000)}",
         "sender": sender,
         "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
         "raw": raw_text,
-        "tickers": all_tickers[:5], # Show top 5 tickers in badge
+        "tickers": all_tickers[:5],
         "all_tickers": all_tickers,
         "market": market,
         "sentiment": sentiment,
@@ -967,16 +963,20 @@ def ingest_kakaotalk():
         "action": action_text
     }
 
-    KAKAOTALK_MESSAGES.insert(0, new_msg)
-    return jsonify({"success": True, "message": "LMS/카톡 정보가 성공적으로 수집되어 국내 1층 브리핑에 반영되었습니다.", "item": new_msg})
+    kakao_messages.insert(0, new_msg)
+    data_store['kakaotalk_messages'] = kakao_messages
+    save_data_store(data_store)
+    return jsonify({"success": True, "message": "LMS/카톡 정보가 성공적으로 수집되어 영구 DB에 저장되었습니다.", "item": new_msg})
 
 @app.route('/api/kakaotalk/messages', methods=['GET'])
 def get_kakaotalk_messages():
+    data_store = load_data_store()
+    kakao_messages = data_store.get('kakaotalk_messages', [])
     market_filter = request.args.get('market', 'all')
     if market_filter in ['domestic', 'international']:
-        filtered = [m for m in KAKAOTALK_MESSAGES if m['market'] == market_filter]
+        filtered = [m for m in kakao_messages if m['market'] == market_filter]
         return jsonify(filtered)
-    return jsonify(KAKAOTALK_MESSAGES)
+    return jsonify(kakao_messages)
 
 # -------------------------------------------------------------------------
 # GEMINI AI INTEGRATION ENGINE
