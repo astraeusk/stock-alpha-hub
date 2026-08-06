@@ -87,20 +87,8 @@ def get_live_market_symbol(symbol):
 # In-memory Watchlist (User inputs directly)
 WATCHLIST = []
 
-# KakaoTalk / LMS messages
-KAKAOTALK_MESSAGES = [
-    {
-        "id": 1,
-        "sender": "와우넷 이경락 대표 LMS",
-        "time": "2026-08-06 22:40",
-        "raw": "[와우넷]이경락대표/덕산하이메탈 엄청난 호실적에도 불구하고 셀온뉴스로 떨어지는 상황 / 개의치 마십시요. 마이크로 솔더볼의 매출확대및 영업이익의 대폭 개선은 시사하는 바가 큽니다. 첫번째로 fc-bga 시장의 무서운 성장세를 알아볼수 있습니다. 작년 동기 574억원대의 매출대비 이번 분기 907억원 그리고 영업이익 100억대 돌파는 대덕전자나 코리아써키트와 같은 fc-bga 업황의 성장에 대한 확신을 주었습니다. 또 심텍 실적 호조에도 불구하고 흔들리는 것또한 의미 둘 필요 없습니다. 전종목 지속 유지입니다.\n\n포트 비중 10%이상 종목: *심텍, *제주반도체, *하나마이크론, *삼화콘덴서, *해성디에스, *대덕전자, *네패스, *코리아써키트, *덕산하이메탈\n포트비중 5% 내외 종목: *마이크로컨텍솔, *HL만도",
-        "tickers": ["덕산하이메탈", "심텍", "대덕전자", "코리아써키트", "HL만도"],
-        "market": "domestic",
-        "sentiment": "호재",
-        "summary": "덕산하이메탈 907억 매출 & 100억 영업이익 호실적 달성. 셀온뉴스 하락 일시적, FC-BGA(대덕전자, 코리아써키트) 성장세 확신 및 포트 전종목 지속 유지 권고.",
-        "action": "덕산하이메탈, 대덕전자, 코리아써키트, 심텍 2층 스토리 리더 & 기업 해독기 연동"
-    }
-]
+# KakaoTalk / LMS messages (User inputs directly)
+KAKAOTALK_MESSAGES = []
 
 STOCK_DECODER_DATA = {
     "NVDA": {

@@ -337,6 +337,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`/api/kakaotalk/messages?market=${currentMarketFilter}`);
             const messages = await res.json();
 
+            if (messages.length === 0) {
+                kakaoFeedContainer.innerHTML = `
+                    <div class="kakao-feed-card text-center" style="padding: 2rem;">
+                        <i class="fa-solid fa-comments text-mauve" style="font-size: 2rem; margin-bottom: 0.5rem; display:block;"></i>
+                        <p class="text-sub">수집된 카톡/LMS 메시지가 없습니다.</p>
+                        <p style="font-size:0.8rem; color:var(--color-subtext0); margin-top:0.3rem;">상단의 <strong>[+ 카톡/뉴스 수집기 입력]</strong> 버튼을 눌러 정보 텍스트를 파싱해 보세요.</p>
+                    </div>
+                `;
+                kakaoArchiveTbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center" style="padding: 2rem;">
+                            <i class="fa-solid fa-inbox text-mauve" style="font-size: 2rem; margin-bottom: 0.5rem; display:block;"></i>
+                            수집 보관된 카톡/LMS 메시지가 없습니다.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
             kakaoFeedContainer.innerHTML = messages.slice(0, 3).map(m => `
                 <div class="kakao-feed-card">
                     <div class="kf-header">
