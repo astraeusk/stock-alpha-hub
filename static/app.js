@@ -188,6 +188,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`/api/briefing?market=${currentMarketFilter}`);
             const data = await res.json();
 
+            // Render Live Marquee Ticker Bar
+            if (data.macro) {
+                const tickerTrack = document.getElementById('tickerTrack');
+                if (tickerTrack) {
+                    const m = data.macro;
+                    tickerTrack.innerHTML = `
+                        <span class="t-item"><i class="fa-solid fa-flag-usa"></i> S&P 500: <strong>${m.sp500.value.toLocaleString()}</strong> <span class="${m.sp500.change.includes('+') ? 'up' : 'down'}">${m.sp500.change}</span></span>
+                        <span class="t-item"><i class="fa-solid fa-flag-usa"></i> NASDAQ: <strong>${m.nasdaq.value.toLocaleString()}</strong> <span class="${m.nasdaq.change.includes('+') ? 'up' : 'down'}">${m.nasdaq.change}</span></span>
+                        <span class="t-item"><i class="fa-solid fa-money-bill-transfer"></i> 실시간 환율(USD/KRW): <strong>${m.usdkrw.value.toLocaleString()} 원</strong> <span class="up">LIVE</span></span>
+                        <span class="t-item"><i class="fa-solid fa-won-sign"></i> KOSPI: <strong>${m.kospi.value.toLocaleString()}</strong> <span class="${m.kospi.change.includes('+') ? 'up' : 'down'}">${m.kospi.change}</span></span>
+                        <span class="t-item"><i class="fa-solid fa-won-sign"></i> KOSDAQ: <strong>${m.kosdaq.value.toLocaleString()}</strong> <span class="${m.kosdaq.change.includes('+') ? 'up' : 'down'}">${m.kosdaq.change}</span></span>
+                    `;
+                }
+            }
+
             // Render Action Triggers
             if (data.action_triggers) {
                 triggerList.innerHTML = data.action_triggers.map(trig => `

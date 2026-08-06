@@ -3,6 +3,7 @@ import re
 import json
 import time
 import datetime
+import urllib.request
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
@@ -27,7 +28,7 @@ DEFAULT_DATA = {
             "asset_type": "개별주",
             "quantity": 50,
             "buy_price": 110.0,
-            "current_price": 128.50,
+            "current_price": 219.22,
             "currency": "USD"
         },
         {
@@ -94,6 +95,52 @@ def save_data_store(data):
             json.dump(data, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print("Data store save error:", e)
+
+# -------------------------------------------------------------------------
+# REAL-TIME MARKET DATA FETCHING (Live Forex & Yahoo Finance API)
+# -------------------------------------------------------------------------
+LIVE_CACHE = {}
+
+def get_live_usd_krw():
+    now = time.time()
+    if 'usdkrw' in LIVE_CACHE and (now - LIVE_CACHE['usdkrw']['ts'] < 60):
+        return LIVE_CACHE['usdkrw']['data']
+    try:
+        req = urllib.request.Request('https://open.er-api.com/v6/latest/USD', headers={'User-Agent': 'Mozilla/5.0'})
+        res = json.loads(urllib.request.urlopen(req, timeout=5).read())
+        rate = round(float(res['rates']['KRW']), 2)
+        LIVE_CACHE['usdkrw'] = {'ts': now, 'data': rate}
+        return rate
+    except Exception as e:
+        print("USD/KRW fetch error:", e)
+        return 1423.62
+
+def get_live_market_symbol(symbol):
+    now = time.time()
+    cache_key = f"sym_{symbol}"
+    if cache_key in LIVE_CACHE and (now - LIVE_CACHE[cache_key]['ts'] < 60):
+        return LIVE_CACHE[cache_key]['data']
+    try:
+        yf_symbol = symbol
+        if symbol.isdigit():
+            yf_symbol = f"{symbol}.KS"
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{yf_symbol}?interval=1d"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        res = json.loads(urllib.request.urlopen(req, timeout=5).read())
+        meta = res['chart']['result'][0]['meta']
+        price = float(meta.get('regularMarketPrice', 0))
+        prev = float(meta.get('chartPreviousClose', price))
+        chg_pct = ((price - prev) / prev * 100.0) if prev > 0 else 0.0
+        data = {
+            "price": round(price, 2),
+            "prev_close": round(prev, 2),
+            "change_pct": f"{'+' if chg_pct >= 0 else ''}{chg_pct:.2f}%"
+        }
+        LIVE_CACHE[cache_key] = {'ts': now, 'data': data}
+        return data
+    except Exception as e:
+        print(f"Market symbol {symbol} fetch error:", e)
+        return None
 
 # In-memory Watchlist
 WATCHLIST = [
@@ -511,7 +558,7 @@ def get_portfolio_cockpit():
     data_store = load_data_store()
     portfolio = data_store.get('portfolio', [])
     
-    usd_krw = 1384.50
+    usd_krw = get_live_usd_krw()
     
     if market_filter in ['domestic', 'international']:
         portfolio = [p for p in portfolio if p['market'] == market_filter]
@@ -523,7 +570,14 @@ def get_portfolio_cockpit():
     
     asset_items = []
     for item in portfolio:
-        price = item.get('current_price', 100.0)
+        # Try fetching real-time price from Yahoo Finance
+        live_info = get_live_market_symbol(item['ticker'])
+        if live_info and live_info.get('price', 0) > 0:
+            price = live_info['price']
+            item['current_price'] = price
+        else:
+            price = item.get('current_price', 100.0)
+
         buy = item.get('buy_price', 100.0)
         qty = item.get('quantity', 1.0)
         curr = item.get('currency', 'USD')
@@ -576,7 +630,7 @@ def get_portfolio_cockpit():
         })
         
     hhi_eval = "안정적 분산 (Safe Diversification)" if hhi_score < 0.25 else ("주의: 쏠림 경고 (Concentration Risk)" if hhi_score < 0.40 else "위험: 극단적 집중 (High Risk)")
-    hhi_desc = f"해외 자산({(intl_eval_krw/total_eval_krw*100):.1f}%) 및 국내 자산({(domestic_eval_krw/total_eval_krw*100):.1f}%) 평가 총액 합산 분석." if total_eval_krw > 0 else "등록된 보유 자산이 없습니다."
+    hhi_desc = f"해외 자산({(intl_eval_krw/total_eval_krw*100):.1f}%) 및 국내 자산({(domestic_eval_krw/total_eval_krw*100):.1f}%) 실시간 시세 합산 분석." if total_eval_krw > 0 else "등록된 보유 자산이 없습니다."
 
     # ETF Overlap Logic
     qqq_holding = next((i for i in asset_items if i['ticker'] == 'QQQ'), None)
@@ -600,6 +654,7 @@ def get_portfolio_cockpit():
         })
 
     return jsonify({
+        "usd_krw_rate": usd_krw,
         "total_eval_krw": round(total_eval_krw),
         "total_invest_krw": round(total_invest_krw),
         "total_pnl_krw": round(total_eval_krw - total_invest_krw),
@@ -623,6 +678,14 @@ def get_portfolio_cockpit():
 @app.route('/api/watchlist', methods=['GET'])
 def get_watchlist():
     market_filter = request.args.get('market', 'all')
+    
+    # Update live prices for Watchlist items
+    for item in WATCHLIST:
+        live = get_live_market_symbol(item['ticker'])
+        if live and live.get('price', 0) > 0:
+            item['price'] = live['price']
+            item['change_pct'] = live['change_pct']
+
     if market_filter in ['domestic', 'international']:
         filtered = [item for item in WATCHLIST if item['market'] == market_filter]
         return jsonify(filtered)
@@ -676,7 +739,14 @@ def get_briefing():
     data_store = load_data_store()
     portfolio = data_store.get('portfolio', [])
     
-    usd_krw = 1384.50
+    usd_krw = get_live_usd_krw()
+
+    # Fetch Live Indices
+    sp500 = get_live_market_symbol('^GSPC') or {"price": 5420.10, "change_pct": "+0.45%"}
+    nasdaq = get_live_market_symbol('^IXIC') or {"price": 17150.80, "change_pct": "+0.82%"}
+    kospi = get_live_market_symbol('^KS11') or {"price": 2680.40, "change_pct": "-0.15%"}
+    kosdaq = get_live_market_symbol('^KQ11') or {"price": 855.20, "change_pct": "+0.32%"}
+
     total_val = sum(p['quantity'] * p['current_price'] * (usd_krw if p['currency']=='USD' else 1) for p in portfolio)
     dom_val = sum(p['quantity'] * p['current_price'] for p in portfolio if p['market']=='domestic')
     intl_val = total_val - dom_val
@@ -686,7 +756,7 @@ def get_briefing():
             "ticker": "AAPL",
             "name": "애플",
             "market": "international",
-            "reason": "밤사이 주가 -4.2% 급락 & 중국 유통망 수요 경고",
+            "reason": "밤사이 주가 변동 및 중국 유통망 수요 경고",
             "recommended_skill": "가격 판독기 (Price Decoder)",
             "action_desc": "Reverse DCF로 현재 하락 주가 반영 필요 성장률 역산 점검"
         },
@@ -702,7 +772,7 @@ def get_briefing():
             "ticker": "NVDA",
             "name": "엔비디아",
             "market": "international",
-            "reason": "카톡 추천 리포트 목표가 $150 상향 소식 입수",
+            "reason": "카톡 추천 리포트 목표가 상향 소식 입수",
             "recommended_skill": "기업 해독기 (Company Decoder)",
             "action_desc": "데이터센터 사업부 매출 비중 및 10-Q 세부 검증"
         }
@@ -714,11 +784,11 @@ def get_briefing():
     return jsonify({
         "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
         "macro": {
-            "usdkrw": {"value": 1384.50, "change": "+4.20", "status": "환율 상승 (수출주 수혜 / 원자재 부담)"},
-            "sp500": {"value": 5420.10, "change": "+0.45%", "status": "해외 강보합"},
-            "nasdaq": {"value": 17150.80, "change": "+0.82%", "status": "해외 빅테크 반등"},
-            "kospi": {"value": 2680.40, "change": "-0.15%", "status": "국내 기관 순매도"},
-            "kosdaq": {"value": 855.20, "change": "+0.32%", "status": "국내 바이오 반등"}
+            "usdkrw": {"value": usd_krw, "change": "실시간 환율", "status": "실시간 반영중"},
+            "sp500": {"value": sp500['price'], "change": sp500['change_pct'], "status": "S&P 500 지수"},
+            "nasdaq": {"value": nasdaq['price'], "change": nasdaq['change_pct'], "status": "나스닥 종합 지수"},
+            "kospi": {"value": kospi['price'], "change": kospi['change_pct'], "status": "코스피 지수"},
+            "kosdaq": {"value": kosdaq['price'], "change": kosdaq['change_pct'], "status": "코스닥 지수"}
         },
         "action_triggers": triggers,
         "portfolio_summary": {
@@ -738,19 +808,27 @@ def get_briefing():
 def get_stock_decoder(ticker):
     ticker_upper = ticker.upper()
     data = STOCK_DECODER_DATA.get(ticker_upper)
+    
+    # Try live price update
+    live = get_live_market_symbol(ticker_upper)
+    price_val = live['price'] if (live and live.get('price', 0) > 0) else (data.get('price', 100.0) if data else 100.0)
+
     if not data:
         data = {
             "name": f"{ticker_upper} Corp",
             "ticker": ticker_upper,
             "market": "domestic" if ticker_upper.isdigit() else "international",
-            "price": 100.0,
+            "price": price_val,
             "currency": "KRW" if ticker_upper.isdigit() else "USD",
             "segment_revenue": [{"segment": "주력 주 사업부", "share": 100, "amount": 10000}],
             "geo_revenue": [{"region": "글로벌/내수", "share": 100}],
-            "business_model": "신규 관심 종목 데이터 로딩 완료. 사업 구조 세부 해독 지원.",
+            "business_model": "신규 관심 종목 실시간 데이터 로딩 완료. 사업 구조 세부 해독 지원.",
             "kpis": [{"name": "매출 성장률 (YoY)", "value": "+12%", "status": "양호"}],
             "source_doc": "공시 보고서 (Form 10-K / 사업보고서)"
         }
+    else:
+        data['price'] = price_val
+
     return jsonify(data)
 
 @app.route('/api/stock/story/<ticker>', methods=['GET'])
