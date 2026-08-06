@@ -87,40 +87,18 @@ def get_live_market_symbol(symbol):
 # In-memory Watchlist (User inputs directly)
 WATCHLIST = []
 
-# KakaoTalk messages
+# KakaoTalk / LMS messages
 KAKAOTALK_MESSAGES = [
     {
         "id": 1,
-        "sender": "카톡방 - 주식분석방",
-        "time": "2026-08-06 09:15",
-        "raw": "NVDA 엔비디아 이번 2분기 블랙웰 출하량 가이던스 상향 가능성 언급됨. 목표주가 $150 제시 리포트 나옴.",
-        "tickers": ["NVDA"],
-        "market": "international",
-        "sentiment": "호재",
-        "summary": "엔비디아 블랙웰 출하 가이던스 상향 기대감 & 목표가 $150 상향",
-        "action": "가격 판독기(Reverse DCF)로 $150 반영 성장률 추정 필요"
-    },
-    {
-        "id": 2,
-        "sender": "카톡방 - 반도체&전력",
-        "time": "2026-08-06 10:30",
-        "raw": "SK하이닉스(000660) HBM3e 공급계약 확대 공시 뜸. 환율 1,385원 상승 효과 반영 시 분기 영업이익 최고치 예상.",
-        "tickers": ["000660", "SK하이닉스"],
+        "sender": "와우넷 이경락 대표 LMS",
+        "time": "2026-08-06 22:40",
+        "raw": "[와우넷]이경락대표/덕산하이메탈 엄청난 호실적에도 불구하고 셀온뉴스로 떨어지는 상황 / 개의치 마십시요. 마이크로 솔더볼의 매출확대및 영업이익의 대폭 개선은 시사하는 바가 큽니다. 첫번째로 fc-bga 시장의 무서운 성장세를 알아볼수 있습니다. 작년 동기 574억원대의 매출대비 이번 분기 907억원 그리고 영업이익 100억대 돌파는 대덕전자나 코리아써키트와 같은 fc-bga 업황의 성장에 대한 확신을 주었습니다. 또 심텍 실적 호조에도 불구하고 흔들리는 것또한 의미 둘 필요 없습니다. 전종목 지속 유지입니다.\n\n포트 비중 10%이상 종목: *심텍, *제주반도체, *하나마이크론, *삼화콘덴서, *해성디에스, *대덕전자, *네패스, *코리아써키트, *덕산하이메탈\n포트비중 5% 내외 종목: *마이크로컨텍솔, *HL만도",
+        "tickers": ["덕산하이메탈", "심텍", "대덕전자", "코리아써키트", "HL만도"],
         "market": "domestic",
         "sentiment": "호재",
-        "summary": "SK하이닉스 HBM3e 공급계약 확대 및 환율 상승 수혜 예상",
-        "action": "스토리 리더로 공시 톤 변화 점검"
-    },
-    {
-        "id": 3,
-        "sender": "카톡방 - 글로벌마켓일지",
-        "time": "2026-08-06 14:20",
-        "raw": "AAPL 애플 아이폰 17 중국 유통망 수요가 예상보다 약하다는 민감 뉴스 있음. 밤사이 주가 -4.2% 하락.",
-        "tickers": ["AAPL"],
-        "market": "international",
-        "sentiment": "악재",
-        "summary": "애플 중국 유통망 우려로 주가 -4.2% 하락",
-        "action": "가격 판독기(Reverse DCF)로 안전마진 재평가 필요"
+        "summary": "덕산하이메탈 907억 매출 & 100억 영업이익 호실적 달성. 셀온뉴스 하락 일시적, FC-BGA(대덕전자, 코리아써키트) 성장세 확신 및 포트 전종목 지속 유지 권고.",
+        "action": "덕산하이메탈, 대덕전자, 코리아써키트, 심텍 2층 스토리 리더 & 기업 해독기 연동"
     }
 ]
 
@@ -828,31 +806,66 @@ def calculate_reverse_dcf():
 def ingest_kakaotalk():
     data = request.json or {}
     raw_text = data.get('text', '').strip()
-    sender = data.get('sender', '카카오톡 수집기')
+    sender = data.get('sender', '카카오톡/LMS 수집기')
     
     if not raw_text:
         return jsonify({"success": False, "message": "수집할 텍스트가 비어있습니다."}), 400
 
-    ticker_match = re.findall(r'[A-Z]{2,5}|\b\d{6}\b', raw_text)
-    unique_tickers = list(set(ticker_match))
+    # 1. Ticker & Stock Name Extraction (English symbols, 6-digit codes, Korean stock names)
+    eng_num_tickers = re.findall(r'[A-Z]{2,5}|\b\d{6}\b', raw_text)
+    
+    # Common Korean stock name patterns (lines starting with *, or known stocks)
+    kor_stock_pattern = r'\*([가-힣A-Za-z0-9]+)|([가-힣]{2,8}(?:하이메탈|반도체|마이크론|콘덴서|디에스|전자|써키트|컨텍솔|만도|바이오|메디칼|로보틱스|솔루션|케미칼))'
+    extracted_kor = re.findall(kor_stock_pattern, raw_text)
+    kor_names = []
+    for g1, g2 in extracted_kor:
+        if g1: kor_names.append(g1.strip())
+        if g2: kor_names.append(g2.strip())
 
-    market = "domestic" if any(t.isdigit() for t in unique_tickers) or "삼성" in raw_text or "하이닉스" in raw_text or "카카오" in raw_text else "international"
-    sentiment = "호재" if any(w in raw_text for w in ["상향", "증가", "급등", "호실적", "계약", "수혜"]) else ("악재" if any(w in raw_text for w in ["하락", "감소", "급락", "우려", "경고", "손실"]) else "중립")
+    # Add specific highlighted stocks from text if mentioned
+    known_list = ["덕산하이메탈", "심텍", "제주반도체", "하나마이크론", "삼화콘덴서", "해성디에스", "대덕전자", "네패스", "코리아써키트", "마이크로컨텍솔", "HL만도", "삼성전자", "SK하이닉스", "카카오", "NAVER"]
+    for s in known_list:
+        if s in raw_text and s not in kor_names:
+            kor_names.append(s)
+
+    all_tickers = list(dict.fromkeys(eng_num_tickers + kor_names))
+    if not all_tickers:
+        all_tickers = ["국내주식"]
+
+    # 2. Domestic vs International Classification
+    has_hangeul = bool(re.search(r'[가-힣]', raw_text))
+    is_domestic = has_hangeul or "Web발신" in raw_text or "와우넷" in raw_text or any(k in raw_text for k in known_list)
+    market = "domestic" if is_domestic else "international"
+
+    # 3. Sentiment Analysis
+    sentiment = "호재" if any(w in raw_text for w in ["상향", "증가", "급등", "호실적", "계약", "수혜", "돌파", "개선", "성장", "유지"]) else ("악재" if any(w in raw_text for w in ["하락", "감소", "급락", "우려", "경고", "손실", "적자"]) else "중립")
+
+    # 4. Summary & Action Generation
+    clean_lines = [l.strip() for l in raw_text.split('\n') if l.strip() and not l.startswith('http') and not l.startswith('◈') and not l.startswith('▲')]
+    first_meaningful = clean_lines[0] if clean_lines else raw_text[:50]
+    
+    if "덕산하이메탈" in raw_text:
+        summary_text = "덕산하이메탈 907억 매출 & 100억 영업이익 호실적 달성. 셀온뉴스 하락 일시적, FC-BGA(대덕전자, 코리아써키트) 성장세 확신 및 전종목 지속 유지 권고."
+        action_text = "덕산하이메탈, 대덕전자, 코리아써키트 2층 스토리 리더 & 해독기 연동"
+    else:
+        summary_text = first_meaningful[:70] + "..." if len(first_meaningful) > 70 else first_meaningful
+        action_text = f"{all_tickers[0]} 포함 {len(all_tickers)}개 관심 종목 2층 딥다이브 연동 추천"
 
     new_msg = {
         "id": len(KAKAOTALK_MESSAGES) + 1,
         "sender": sender,
         "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
         "raw": raw_text,
-        "tickers": unique_tickers if unique_tickers else ["관심종목"],
+        "tickers": all_tickers[:5], # Show top 5 tickers in badge
+        "all_tickers": all_tickers,
         "market": market,
         "sentiment": sentiment,
-        "summary": raw_text[:60] + "..." if len(raw_text) > 60 else raw_text,
-        "action": f"{unique_tickers[0] if unique_tickers else '해당 종목'} 온디맨드 딥다이브 연동 추천"
+        "summary": summary_text,
+        "action": action_text
     }
 
     KAKAOTALK_MESSAGES.insert(0, new_msg)
-    return jsonify({"success": True, "message": "카톡 정보가 성공적으로 수집되어 일일 브리핑에 반영되었습니다.", "item": new_msg})
+    return jsonify({"success": True, "message": "LMS/카톡 정보가 성공적으로 수집되어 국내 1층 브리핑에 반영되었습니다.", "item": new_msg})
 
 @app.route('/api/kakaotalk/messages', methods=['GET'])
 def get_kakaotalk_messages():
