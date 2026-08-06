@@ -825,8 +825,48 @@ body.dark-theme {
     pointer-events: auto;
 }
 
+.modal-card {
+    background: rgba(30, 30, 46, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 480px;
+    padding: 1.6rem;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(203, 166, 247, 0.15);
+    animation: modalPop 0.25s ease-out;
+}
+
+@keyframes modalPop {
+    from { opacity: 0; transform: scale(0.92) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
 .modal-card.modal-lg {
     max-width: 680px;
+}
+
+.close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--color-subtext0);
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.close-btn:hover {
+    background: rgba(243, 139, 168, 0.25);
+    border-color: var(--color-red);
+    color: var(--color-red);
+    transform: scale(1.15) rotate(90deg);
+    box-shadow: 0 0 12px rgba(243, 139, 168, 0.4);
 }
 
 .btn-danger {

@@ -383,35 +383,35 @@
         <div class="modal-card">
             <div class="modal-header">
                 <h3><i class="fa-solid fa-star text-yellow"></i> 새 관심 종목 추가</h3>
-                <button class="close-btn" id="btnCloseAddWatchlistModal">&times;</button>
+                <button class="close-btn" id="btnCloseAddWatchlistModal"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
                 <div class="form-group mb-3">
                     <label>시장 구분</label>
                     <select id="addWatchMarket" class="form-select">
-                        <option value="international">🇺🇸 해외 주식 (미국 등)</option>
-                        <option value="domestic">🇰🇷 국내 주식 (코스피/코스닥)</option>
+                        <option value="domestic">🇰🇷 국내 주식 / ETF (코스피 / 코스닥 개별주 및 ETF)</option>
+                        <option value="international">🇺🇸 해외 주식 / ETF (미국 / 글로벌 기술주 등)</option>
                     </select>
                 </div>
                 <div class="form-group mb-3">
-                    <label>종목 티커 (Symbol)</label>
-                    <input type="text" id="addWatchTicker" placeholder="예: TSLA, MSFT, 005930">
+                    <label>종목 티커 (Symbol 또는 6자리 코드)</label>
+                    <input type="text" id="addWatchTicker" placeholder="예: 005930, 000660, 035420, NVDA, TSLA">
                 </div>
                 <div class="form-group mb-3">
                     <label>종목명</label>
-                    <input type="text" id="addWatchName" placeholder="예: 테슬라, 삼성전자">
+                    <input type="text" id="addWatchName" placeholder="예: 삼성전자, SK하이닉스, NAVER, 엔비디아">
                 </div>
                 <div class="form-group mb-3">
                     <label>섹터 / 업종</label>
-                    <input type="text" id="addWatchSector" placeholder="예: 전기차/AI, 반도체">
+                    <input type="text" id="addWatchSector" placeholder="예: 국내 반도체, 인터넷/플랫폼, AI">
                 </div>
                 <div class="form-group mb-3">
-                    <label>현재가 (선택)</label>
-                    <input type="number" id="addWatchPrice" placeholder="예: 220.5" step="0.1">
+                    <label>현재가 (자동 라이브 파싱 / 선택 입력)</label>
+                    <input type="number" id="addWatchPrice" placeholder="예: 74500 또는 비워두면 자동 조회" step="0.1">
                 </div>
                 <div class="form-group mb-3">
                     <label>관심 메모 (투자 아이디어)</label>
-                    <input type="text" id="addWatchMemo" placeholder="예: 로보택시 행사 발표 및 FSD v13 승인 추적">
+                    <input type="text" id="addWatchMemo" placeholder="예: HBM 수율 퀄테스트 및 실적 모멘텀 추적">
                 </div>
                 <button class="btn-primary btn-full mt-3" id="btnSubmitAddWatchlist">관심 종목 등록</button>
             </div>
@@ -423,7 +423,7 @@
         <div class="modal-card">
             <div class="modal-header">
                 <h3><i class="fa-solid fa-lock text-mauve"></i> AlphaHub 10인 화이트리스트 로그인</h3>
-                <button class="close-btn" id="btnCloseLoginModal">&times;</button>
+                <button class="close-btn" id="btnCloseLoginModal"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
                 <p class="text-sub mb-3">본 시스템은 허가된 사용자 전용으로 보안 로그인 후 이용 가능합니다.</p>
@@ -445,7 +445,7 @@
         <div class="modal-card modal-lg">
             <div class="modal-header">
                 <h3><i class="fa-solid fa-users-gear text-teal"></i> 허가 사용자(화이트리스트) 계정 관리</h3>
-                <button class="close-btn" id="btnCloseUserMgmtModal">&times;</button>
+                <button class="close-btn" id="btnCloseUserMgmtModal"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
                 <p class="text-sub mb-3">사이트 접근 허가 계정(아이디/비밀번호)을 추가하거나 관리할 수 있습니다.</p>
@@ -501,44 +501,46 @@
         <div class="modal-card">
             <div class="modal-header">
                 <h3><i class="fa-solid fa-coins text-yellow"></i> <span id="assetModalTitle">보유 자산 등록</span></h3>
-                <button class="close-btn" id="btnCloseAssetModal">&times;</button>
+                <button class="close-btn" id="btnCloseAssetModal"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="assetEditId" value="">
                 <div class="form-group mb-3">
                     <label>시장 구분</label>
                     <select id="assetMarket" class="form-select">
-                        <option value="international">🇺🇸 해외 주식 / ETF</option>
-                        <option value="domestic">🇰🇷 국내 주식 / ETF</option>
+                        <option value="domestic">🇰🇷 국내 주식 / ETF (코스피 & 코스닥)</option>
+                        <option value="international">🇺🇸 해외 주식 / ETF (미국 & 글로벌)</option>
                     </select>
                 </div>
                 <div class="form-group mb-3">
-                    <label>종목 티커 (Symbol)</label>
-                    <input type="text" id="assetTicker" placeholder="예: NVDA, AAPL, 000660">
+                    <label>종목 티커 (Symbol 또는 6자리 코드)</label>
+                    <input type="text" id="assetTicker" placeholder="예: 005930(삼성전자), 000660(SK하이닉스), 035420(NAVER), NVDA">
                 </div>
                 <div class="form-group mb-3">
                     <label>종목명 / 자산명</label>
-                    <input type="text" id="assetName" placeholder="예: 엔비디아, SK하이닉스">
+                    <input type="text" id="assetName" placeholder="예: 삼성전자, SK하이닉스, NAVER, 엔비디아">
                 </div>
                 <div class="form-group mb-3">
                     <label>자산 유형</label>
                     <select id="assetType" class="form-select">
-                        <option value="개별주">개별주 (주식)</option>
-                        <option value="지수 ETF">지수 ETF</option>
+                        <option value="국내 개별주">🇰🇷 국내 개별 주식 (삼성전자, SK하이닉스, NAVER 등)</option>
+                        <option value="국내 ETF">🇰🇷 국내 상장 ETF (KODEX 200, TIGER 등)</option>
+                        <option value="해외 개별주">🇺🇸 해외 개별 주식 (NVDA, AAPL, TSLA 등)</option>
+                        <option value="해외 ETF">🇺🇸 해외 상장 ETF (QQQ, SPY, GLD 등)</option>
                         <option value="원자재/기타">원자재 / 현금 / 기타</option>
                     </select>
                 </div>
                 <div class="form-group mb-3">
-                    <label>보유 수량</label>
+                    <label>보유 수량 (주)</label>
                     <input type="number" id="assetQuantity" placeholder="예: 50" step="0.01">
                 </div>
                 <div class="form-group mb-3">
                     <label>매수 평단가 (달러/원화)</label>
-                    <input type="number" id="assetBuyPrice" placeholder="예: 110.0 또는 155000" step="0.1">
+                    <input type="number" id="assetBuyPrice" placeholder="예: 71000 (원) 또는 110.0 ($)" step="0.1">
                 </div>
                 <div class="form-group mb-3">
-                    <label>현재가 (달러/원화)</label>
-                    <input type="number" id="assetCurrentPrice" placeholder="예: 128.5 또는 178500" step="0.1">
+                    <label>현재가 (자동 라이브 파싱 / 선택 입력)</label>
+                    <input type="number" id="assetCurrentPrice" placeholder="예: 74500 (비워두면 실시간 라이브 주가 자동 연결)" step="0.1">
                 </div>
                 <button class="btn-primary btn-full mt-3" id="btnSubmitAsset">자산 저장 및 콕핏 갱신</button>
             </div>
