@@ -1338,7 +1338,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                         const uploadData = await uploadRes.json();
                         if (uploadData.id) {
-                            alert('🎉 내 구글 드라이브에 [stock_alpha_hub_backup.json] 백업 파일이 성공적으로 보존되었습니다!');
+                            // Save master token and file ID to server for background auto-syncing!
+                            await fetch('/api/settings/gdrive-master', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ access_token: accessToken, file_id: uploadData.id })
+                            });
+                            alert('🎉 내 구글 드라이브 계정에 [stock_alpha_hub_backup.json] 중앙 통합 백업 파일이 생성되었으며, 마스터 실시간 자동 동기화 연동이 완료되었습니다!');
                         } else {
                             alert('구글 드라이브 업로드 실패: ' + (uploadData.error?.message || '알 수 없는 오류'));
                         }
