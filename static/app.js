@@ -255,6 +255,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`/api/watchlist?market=${currentMarketFilter}`);
             const list = await res.json();
 
+            if (list.length === 0) {
+                watchlistContainer.innerHTML = `
+                    <div class="content-card text-center" style="grid-column: 1 / -1; padding: 3rem;">
+                        <i class="fa-solid fa-star-half-stroke text-yellow" style="font-size: 2.5rem; margin-bottom: 1rem;"></i>
+                        <h4 style="color:var(--color-mauve); margin-bottom:0.5rem;">등록된 관심 종목이 없습니다</h4>
+                        <p class="text-sub">상단의 <strong>[+ 새 관심 종목 등록]</strong> 버튼을 눌러 관심 주식을 등록해 보세요.</p>
+                    </div>
+                `;
+                return;
+            }
+
             watchlistContainer.innerHTML = list.map(item => `
                 <div class="watchlist-card">
                     <div class="wl-header">
@@ -385,23 +396,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Render Holdings Table
             const tbody = document.getElementById('portfolioHoldingsTbody');
-            tbody.innerHTML = data.assets_detail.map(a => `
-                <tr>
-                    <td><strong class="text-yellow">${a.ticker}</strong></td>
-                    <td>${a.name}</td>
-                    <td><span class="badge ${a.market === 'domestic' ? 'up' : 'normal'}">${a.market === 'domestic' ? '🇰🇷 국내' : '🇺🇸 해외'}</span></td>
-                    <td><span class="info-tag">${a.asset_type}</span></td>
-                    <td>${a.quantity.toLocaleString()}주</td>
-                    <td>${a.currency === 'USD' ? '$' : ''}${a.buy_price.toLocaleString()}</td>
-                    <td>${a.currency === 'USD' ? '$' : ''}${a.current_price.toLocaleString()}</td>
-                    <td><strong>${a.eval_krw.toLocaleString()} 원</strong></td>
-                    <td><span class="${a.pnl_pct >= 0 ? 'text-green' : 'text-red'}" style="font-weight:700;">${a.pnl_pct >= 0 ? '+' : ''}${a.pnl_pct.toFixed(2)}%</span></td>
-                    <td>
-                        <button class="btn-secondary btn-xs btn-edit-asset" data-asset='${JSON.stringify(a)}'><i class="fa-solid fa-pen"></i></button>
-                        <button class="btn-danger btn-xs btn-del-asset" data-id="${a.id}"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
+            if (!data.assets_detail || data.assets_detail.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="text-center" style="padding: 3rem;">
+                            <i class="fa-solid fa-folder-open text-mauve" style="font-size: 2.5rem; margin-bottom: 1rem; display: block;"></i>
+                            <h4 style="color:var(--color-mauve); margin-bottom:0.5rem;">등록된 보유 자산이 없습니다</h4>
+                            <p class="text-sub">오른쪽 상단의 <strong>[+ 내 보유 자산 등록]</strong> 버튼을 눌러 보유 주식/ETF를 직접 입력해 보세요.</p>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = data.assets_detail.map(a => `
+                    <tr>
+                        <td><strong class="text-yellow">${a.ticker}</strong></td>
+                        <td>${a.name}</td>
+                        <td><span class="badge ${a.market === 'domestic' ? 'up' : 'normal'}">${a.market === 'domestic' ? '🇰🇷 국내' : '🇺🇸 해외'}</span></td>
+                        <td><span class="info-tag">${a.asset_type}</span></td>
+                        <td>${a.quantity.toLocaleString()}주</td>
+                        <td>${a.currency === 'USD' ? '$' : ''}${a.buy_price.toLocaleString()}</td>
+                        <td>${a.currency === 'USD' ? '$' : ''}${a.current_price.toLocaleString()}</td>
+                        <td><strong>${a.eval_krw.toLocaleString()} 원</strong></td>
+                        <td><span class="${a.pnl_pct >= 0 ? 'text-green' : 'text-red'}" style="font-weight:700;">${a.pnl_pct >= 0 ? '+' : ''}${a.pnl_pct.toFixed(2)}%</span></td>
+                        <td>
+                            <button class="btn-secondary btn-xs btn-edit-asset" data-asset='${JSON.stringify(a)}'><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-danger btn-xs btn-del-asset" data-id="${a.id}"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
 
             // Attach Asset Edit / Delete Event Listeners
             document.querySelectorAll('.btn-edit-asset').forEach(btn => {
@@ -867,4 +890,13 @@ document.addEventListener('DOMContentLoaded', () => {
     runCompanyDecoder('NVDA');
     runStoryReader('AAPL');
     runReverseDcf();
+
+    // Automatic Live Data Polling (Every 15 Seconds)
+    setInterval(() => {
+        if (currentUser) {
+            loadDailyBriefing();
+            loadWatchlist();
+            loadPortfolioCockpit();
+        }
+    }, 15000);
 });

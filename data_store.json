@@ -1,0 +1,10 @@
+{
+  "whitelist_users": {
+    "admin@alpha.com": {
+      "name": "우성교 (Master)",
+      "role": "admin",
+      "pass": "alpha123"
+    }
+  },
+  "portfolio": []
+}

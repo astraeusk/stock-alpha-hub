@@ -12,70 +12,12 @@ CORS(app)
 
 DATA_STORE_PATH = os.path.join(os.path.dirname(__file__), 'data_store.json')
 
-# Default Data Store
+# Default Data Store (No dummy portfolio entries)
 DEFAULT_DATA = {
     "whitelist_users": {
-        "admin@alpha.com": {"name": "우성교 (Master)", "role": "admin", "pass": "alpha123"},
-        "user1@alpha.com": {"name": "투자자 A", "role": "member", "pass": "invest1"},
-        "user2@alpha.com": {"name": "투자자 B", "role": "member", "pass": "invest2"}
+        "admin@alpha.com": {"name": "우성교 (Master)", "role": "admin", "pass": "alpha123"}
     },
-    "portfolio": [
-        {
-            "id": "p1",
-            "ticker": "NVDA",
-            "name": "엔비디아",
-            "market": "international",
-            "asset_type": "개별주",
-            "quantity": 50,
-            "buy_price": 110.0,
-            "current_price": 219.22,
-            "currency": "USD"
-        },
-        {
-            "id": "p2",
-            "ticker": "AAPL",
-            "name": "애플",
-            "market": "international",
-            "asset_type": "개별주",
-            "quantity": 40,
-            "buy_price": 195.0,
-            "current_price": 218.20,
-            "currency": "USD"
-        },
-        {
-            "id": "p3",
-            "ticker": "QQQ",
-            "name": "Invesco QQQ Trust",
-            "market": "international",
-            "asset_type": "지수 ETF",
-            "quantity": 30,
-            "buy_price": 440.0,
-            "current_price": 480.00,
-            "currency": "USD"
-        },
-        {
-            "id": "p4",
-            "ticker": "000660",
-            "name": "SK하이닉스",
-            "market": "domestic",
-            "asset_type": "개별주",
-            "quantity": 100,
-            "buy_price": 155000,
-            "current_price": 178500,
-            "currency": "KRW"
-        },
-        {
-            "id": "p5",
-            "ticker": "005930",
-            "name": "삼성전자",
-            "market": "domestic",
-            "asset_type": "개별주",
-            "quantity": 200,
-            "buy_price": 71000,
-            "current_price": 74500,
-            "currency": "KRW"
-        }
-    ]
+    "portfolio": []
 }
 
 def load_data_store():
@@ -142,49 +84,8 @@ def get_live_market_symbol(symbol):
         print(f"Market symbol {symbol} fetch error:", e)
         return None
 
-# In-memory Watchlist
-WATCHLIST = [
-    {
-        "ticker": "NVDA",
-        "name": "엔비디아",
-        "market": "international",
-        "currency": "USD",
-        "price": 128.50,
-        "change_pct": "+2.4%",
-        "sector": "AI 반도체",
-        "memo": "블랙웰 램프업 및 HBM3e 데이터센터 공급 확대 모니터링"
-    },
-    {
-        "ticker": "AAPL",
-        "name": "애플",
-        "market": "international",
-        "currency": "USD",
-        "price": 218.20,
-        "change_pct": "-4.2%",
-        "sector": "빅테크 하드웨어/서비스",
-        "memo": "중국 유통망 우려 및 Apple Intelligence 기기 교체주기 추적"
-    },
-    {
-        "ticker": "000660",
-        "name": "SK하이닉스",
-        "market": "domestic",
-        "currency": "KRW",
-        "price": 178500,
-        "change_pct": "+1.8%",
-        "sector": "국내 메모리/HBM",
-        "memo": "HBM3e 독점 수율 우위 및 환율 상승 수혜주"
-    },
-    {
-        "ticker": "005930",
-        "name": "삼성전자",
-        "market": "domestic",
-        "currency": "KRW",
-        "price": 74500,
-        "change_pct": "+0.5%",
-        "sector": "국내 반도체/파운드리",
-        "memo": "HBM3e 12단 퀄테스트 통과 및 2나노 파운드리 수주 점검"
-    }
-]
+# In-memory Watchlist (User inputs directly)
+WATCHLIST = []
 
 # KakaoTalk messages
 KAKAOTALK_MESSAGES = [
