@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Global State
     // ----------------------------------------------------------------------
     let currentMarketFilter = 'all'; // 'all' | 'domestic' | 'international'
-    let currentUser = { name: "우성교 (Master)", email: "admin@alpha.com", role: "admin" };
+    let currentUser = JSON.parse(localStorage.getItem('alpha_user')) || null;
     let assetChartInstance = null;
 
     // ----------------------------------------------------------------------
@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const btnRefreshBriefing = document.getElementById('btnRefreshBriefing');
     const btnOpenUserMgmt = document.getElementById('btnOpenUserMgmt');
+    const loginModal = document.getElementById('loginModal');
 
     // ----------------------------------------------------------------------
     // Market Selector Logic (국내 / 해외 / 전체)
@@ -110,15 +111,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // User Authentication & Whitelist Management
     // ----------------------------------------------------------------------
     function updateUserUI() {
-        document.getElementById('userNameDisplay').innerText = currentUser.name;
-        document.getElementById('userRoleDisplay').innerHTML = currentUser.role === 'admin' 
-            ? `<i class="fa-solid fa-user-shield text-mauve"></i> 관리자 (Master)` 
-            : `<i class="fa-solid fa-user text-teal"></i> 일반 회원 (Member)`;
-        
-        if (currentUser.role === 'admin') {
-            btnOpenUserMgmt.style.display = 'inline-block';
+        const dot = document.getElementById('userStatusDot');
+        const title = document.getElementById('userStatusTitle');
+        const loginBtn = document.getElementById('btnLoginModal');
+
+        if (currentUser) {
+            document.getElementById('userNameDisplay').innerText = currentUser.name;
+            document.getElementById('userRoleDisplay').innerHTML = currentUser.role === 'admin' 
+                ? `<i class="fa-solid fa-user-shield text-mauve"></i> 관리자 (Master)` 
+                : `<i class="fa-solid fa-user text-teal"></i> 일반 회원 (Member)`;
+            
+            if (dot) dot.className = 'status-dot online';
+            if (title) title.innerText = '보안 세션 접속중';
+            if (loginBtn) loginBtn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> 로그아웃';
+
+            if (currentUser.role === 'admin') {
+                btnOpenUserMgmt.style.display = 'inline-block';
+            } else {
+                btnOpenUserMgmt.style.display = 'none';
+            }
         } else {
+            document.getElementById('userNameDisplay').innerText = '로그인 필요';
+            document.getElementById('userRoleDisplay').innerHTML = `<i class="fa-solid fa-lock text-red"></i> 비인증 게스트 세션`;
+            if (dot) dot.className = 'status-dot offline';
+            if (title) title.innerText = '미인증 상태';
+            if (loginBtn) loginBtn.innerHTML = '<i class="fa-solid fa-key"></i> 보안 로그인';
             btnOpenUserMgmt.style.display = 'none';
+            loginModal.classList.add('active');
         }
     }
 
@@ -695,13 +714,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Login Modal Handlers
-    const loginModal = document.getElementById('loginModal');
-    document.getElementById('btnLoginModal').addEventListener('click', () => loginModal.classList.add('active'));
+    document.getElementById('btnLoginModal').addEventListener('click', () => {
+        if (currentUser) {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                localStorage.removeItem('alpha_user');
+                currentUser = null;
+                updateUserUI();
+            }
+        } else {
+            loginModal.classList.add('active');
+        }
+    });
     document.getElementById('btnCloseLoginModal').addEventListener('click', () => loginModal.classList.remove('active'));
 
     document.getElementById('btnSubmitLogin').addEventListener('click', async () => {
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPass').value;
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPass').value.trim();
         try {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
@@ -711,6 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (data.success) {
                 currentUser = data.user;
+                localStorage.setItem('alpha_user', JSON.stringify(currentUser));
                 updateUserUI();
                 alert(`환영합니다 ${currentUser.name}님! 로그인 되었습니다.`);
                 loginModal.classList.remove('active');
