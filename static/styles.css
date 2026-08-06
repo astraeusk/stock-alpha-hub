@@ -338,19 +338,24 @@ body.dark-theme {
     gap: 1.5rem;
 }
 
+/* --------------------------------------------------------------------------
+   Top Header & Status Badges
+   -------------------------------------------------------------------------- */
 .top-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: var(--border-glass);
-    padding-bottom: 1rem;
+    padding-bottom: 1.1rem;
+    backdrop-filter: blur(16px);
 }
 
 .header-left h2 {
     font-family: var(--font-heading);
-    font-size: 1.4rem;
+    font-size: 1.45rem;
     font-weight: 700;
     color: var(--color-text);
+    letter-spacing: -0.01em;
 }
 
 .sub-text {
@@ -366,41 +371,58 @@ body.dark-theme {
 
 .market-pill-badge {
     background: rgba(203, 166, 247, 0.15);
-    border: 1px solid var(--color-mauve);
+    border: 1px solid rgba(203, 166, 247, 0.35);
     color: var(--color-mauve);
-    padding: 4px 12px;
+    padding: 5px 14px;
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .m-dot {
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: var(--color-mauve);
 }
 
-/* Buttons */
+.m-dot.online {
+    background: var(--color-green);
+    box-shadow: 0 0 10px var(--color-green);
+    animation: pulseDot 1.8s infinite;
+}
+
+@keyframes pulseDot {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(166, 227, 161, 0.7); }
+    70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(166, 227, 161, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(166, 227, 161, 0); }
+}
+
+/* Buttons System */
 .btn-primary {
-    background: linear-gradient(135deg, var(--color-mauve), var(--color-blue));
-    color: var(--bg-crust);
+    background: linear-gradient(135deg, #cba6f7 0%, #89b4fa 100%);
+    color: #11111b;
     border: none;
-    padding: 8px 16px;
+    padding: 8px 18px;
     border-radius: var(--radius-sm);
-    font-weight: 600;
+    font-weight: 700;
     font-size: 0.85rem;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 4px 12px rgba(203, 166, 247, 0.3);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+    box-shadow: 0 4px 15px rgba(203, 166, 247, 0.35);
 }
 
 .btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(203, 166, 247, 0.45);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(203, 166, 247, 0.55);
+}
+
+.btn-primary:active {
+    transform: translateY(0) scale(0.98);
 }
 
 .btn-secondary {
@@ -412,26 +434,30 @@ body.dark-theme {
     font-weight: 600;
     font-size: 0.85rem;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .btn-secondary:hover {
     background: var(--bg-surface1);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 .btn-outline {
     background: transparent;
     border: 1px solid var(--color-mauve);
     color: var(--color-mauve);
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: var(--radius-sm);
     font-size: 0.8rem;
+    font-weight: 600;
     cursor: pointer;
-
+    transition: all 0.2s ease;
 }
 
 .btn-outline:hover {
-    background: rgba(203, 166, 247, 0.15);
+    background: rgba(203, 166, 247, 0.18);
+    transform: translateY(-1px);
 }
 
 .btn-full {
@@ -439,14 +465,14 @@ body.dark-theme {
 }
 
 .btn-sm {
-    padding: 4px 10px;
+    padding: 5px 12px;
     font-size: 0.78rem;
 }
 
 /* Tab Panes */
 .tab-pane {
     display: none;
-    animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tab-pane.active {
